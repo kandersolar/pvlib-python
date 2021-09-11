@@ -13,10 +13,10 @@ jobs:
         environment-type: [conda, bare]
         suffix: ['']
         include:
-          - suffix: -min
+          - os: ubuntu-latest
             python-version: 3.6
             environment-type: conda
-            os: ubuntu-latest
+            suffix: -min
         exclude:
           - os: macos-latest
             environment-type: conda
@@ -56,10 +56,10 @@ jobs:
         shell: bash -l {0}
         run: pytest pvlib --cov=./ --cov-report=xml
 
-      - name: Upload coverage to Codecov
-        if: matrix.os == 'ubuntu-latest' && matrix.environment-type == 'conda'
-        uses: codecov/codecov-action@v2
-        with:
-          directory: ./coverage/reports/
-          fail_ci_if_error: true
-          verbose: true
+      # - name: Upload coverage to Codecov
+      #   if: matrix.os == 'ubuntu-latest' && matrix.environment-type == 'conda'
+      #   uses: codecov/codecov-action@v2
+      #   with:
+      #     directory: ./coverage/reports/
+      #     fail_ci_if_error: true
+      #     verbose: true
