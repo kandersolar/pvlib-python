@@ -50,6 +50,7 @@ jobs:
       - name: Upload coverage to Codecov
         if: matrix.os == 'ubuntu-latest' && matrix.environment-type == 'conda'
         uses: codecov/codecov-action@v2
-        directory: ./coverage/reports/
-        fail_ci_if_error: true
-        verbose: true
+        with:
+          directory: ./coverage/reports/
+          fail_ci_if_error: true
+          verbose: true
