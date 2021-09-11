@@ -30,10 +30,17 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
+      - name: Set conda requirements filename
+        run: |
+          stripped="${python_version//./}"  # remove "." chars, so "3.7" becomes "37"
+          echo "::set-env name=stripped_version::$stripped"
+        env:
+            python_version: ${{ matrix.python-version }}
+
       - name: Create conda environment
         if: matrix.environment-type == 'conda'
         env:
-          REQUIREMENTS: ci/requirements-py${{ matrix.python-version[0] }}${{ matrix.python-version[2] }}${{ matrix.suffix }}.yml
+          REQUIREMENTS: ci/requirements-py$stripped_version${{ matrix.suffix }}.yml
         run: conda env create --quiet --file $REQUIREMENTS
 
       - name: Create bare environment
