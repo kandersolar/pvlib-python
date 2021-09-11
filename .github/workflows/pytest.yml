@@ -53,8 +53,10 @@ jobs:
           pip install .
 
       - name: Run tests
-        shell: bash -l {0}
-        run: pytest pvlib --cov=./ --cov-report=xml
+        shell: bash -l {0}  # necessary for conda env to be active
+        env:
+          ARGS: "${{ (matrix.os == 'ubuntu-latest' && matrix.environment-type == 'conda') && '--remote-data' || '' }}"
+        run: pytest pvlib --cov=./ --cov-report=xml $ARGS
 
       # - name: Upload coverage to Codecov
       #   if: matrix.os == 'ubuntu-latest' && matrix.environment-type == 'conda'
