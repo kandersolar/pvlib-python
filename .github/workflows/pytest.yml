@@ -52,7 +52,9 @@ jobs:
         if: matrix.environment-type == 'conda'
         env:
           REQUIREMENTS: ci/requirements-py${{ fromJSON(env.VERSIONMAP)[matrix.python-version] }}${{ matrix.suffix }}.yml
-        run: conda env create --quiet --file $REQUIREMENTS
+        run: |
+          conda env create --quiet --file $REQUIREMENTS
+          conda activate test_env
 
       - name: Run tests
         run: pytest pvlib --cov=./ --cov-report=xml
