@@ -56,6 +56,8 @@ jobs:
         shell: bash -l {0}  # necessary for conda env to be active
         env:
           ARGS: "${{ (matrix.os == 'ubuntu-latest' && matrix.environment-type == 'conda') && '--remote-data' || '' }}"
+          BSRN_FTP_USERNAME: ${{ secrets.BSRN_FTP_USERNAME }}
+          BSRN_FTP_PASSWORD: ${{ secrets.BSRN_FTP_PASSWORD }}
         run: pytest pvlib --cov=./ --cov-report=xml $ARGS
 
       # - name: Upload coverage to Codecov
