@@ -33,7 +33,7 @@ jobs:
       - name: Create conda environment
         if: matrix.environment-type == 'conda'
         env:
-          REQUIREMENTS: ci/requirements-py${{ matrix.python-version }}${{ matrix.suffix }}.yml
+          REQUIREMENTS: ci/requirements-py${{ matrix.python-version[0] }}${{ matrix.python-version[2] }}${{ matrix.suffix }}.yml
         run: conda env create --quiet --file $REQUIREMENTS
 
       - name: Create bare environment
