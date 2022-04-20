@@ -92,7 +92,7 @@ jobs:
         run: pytest pvlib/tests/iotools --cov=./ --cov-report=xml --remote-data
 
       - name: Upload coverage to Codecov
-        if: matrix.python-version == 3.9
+        if: matrix.python-version == 3.6
         uses: codecov/codecov-action@v2
         with:
           fail_ci_if_error: true
