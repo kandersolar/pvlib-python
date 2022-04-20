@@ -58,6 +58,7 @@ jobs:
         run: pip install .[test]
 
       - name: Show environment
+        shell: bash -l {0}  # necessary for conda env to be active
         run: |
           which python
           pip freeze
