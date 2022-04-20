@@ -3,10 +3,10 @@ codecov:
     require_ci_to_pass: no
 
 # "flags" are used to identify subsets of the overall codebase when calculating coverage.
-# Currently used for "iotools" (pvlib.iotools) and "core" (everything except pvlib.iotools).
-# Because we only run the iotools tests sometimes, we need to split it out so that
+# Currently used for "remote_data" (pvlib.iotools & forecast) and "core" (everything else).
+# Because we only run the remote_data tests sometimes, we need to split it out so that
 # codecov doesn't report a big drop in coverage when we don't run them.
-# We also use "carryforward: true" so that, when we don't run iotools tests, the last
+# We also use "carryforward: true" so that, when we don't run remote_data tests, the last
 # known coverage is carried forward and used in place of the missing coverage.
 # https://docs.codecov.com/docs/flags
 flags:
@@ -15,11 +15,13 @@ flags:
     paths:
       - pvlib/
       - '!pvlib/iotools/'
+      - '!pvlib/forecast.py'
     carryforward: false
 
-  iotools:
+  remote-data:
     paths:
       - pvlib/iotools/
+      - pvlib/forecast.py
     carryforward: true  # if not run, use coverage from previous commit
 
 
@@ -36,25 +38,27 @@ coverage:
         flags:
           - core
 
-      iotools:
+      remote-data:
         target: auto
         flags:
-          - iotools
+          - remote-data
 
       tests-core:
         target: 95%
         paths:
           - 'pvlib/tests/.*'
           - '!pvlib/tests/iotools/.*'
+          - '!pvlib/tests/test_forecast.py'
         flags:
           - core
 
-      tests-iotools:
+      tests-remote-data:
         target: 95%
         paths:
-          - "pvlib/tests/iotools/.*"
+          - 'pvlib/tests/iotools/.*'
+          - 'pvlib/tests/test_forecast.py'
         flags:
-          - iotools
+          - remote-data
 
 
 comment: off
