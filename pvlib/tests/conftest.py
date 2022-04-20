@@ -144,7 +144,8 @@ requires_numba = pytest.mark.skipif(not has_numba(), reason="requires numba")
 try:
     import siphon
     has_siphon = True
-except ImportError:
+except ImportError as e:
+    print(str(e))
     has_siphon = False
 
 requires_siphon = pytest.mark.skipif(not has_siphon,
