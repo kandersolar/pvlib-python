@@ -148,6 +148,7 @@ def get_psm3(latitude, longitude, api_key, email, names='tmy', interval=60,
     .. [4] `Physical Solar Model (PSM) v3 - Five Minute Temporal Resolution
        <https://developer.nrel.gov/docs/solar/nsrdb/psm3-5min-download/>`_
     """
+    make_an_error
     # The well know text (WKT) representation of geometry notation is strict.
     # A POINT object is a string with longitude first, then the latitude, with
     # four decimals each, and exactly one space between them.
