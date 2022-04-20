@@ -2,26 +2,51 @@ codecov:
   notify:
     require_ci_to_pass: no
 
+# "flags" are used to identify subsets of the overall codebase when calculating coverage.
+# Currently used for "iotools" (pvlib.iotools) and "core" (everything except pvlib.iotools).
+# Because we only run the iotools tests sometimes, we need to split it out so that
+# codecov doesn't report a big drop in coverage when we don't run them.
+# We also use "carryforward: true" so that, when we don't run iotools tests, the last
+# known coverage is carried forward and used in place of the missing coverage.
+# https://docs.codecov.com/docs/flags
+flags:
+
+  core:
+    paths:
+      - pvlib/
+      - '!pvlib/iotools/'
+    carryforward: false
+
+  iotools:
+    paths:
+      - pvlib/iotools/
+    carryforward: true  # if not run, use coverage from previous commit
+
+
 coverage:
   status:
     patch:
       default:
         target: 100%
-        if_no_uploads: error
-        if_not_found: success
-        if_ci_failed: failure
+
     project:
-      default: false
-      library:
+      default: off
+      core:
         target: auto
-        if_no_uploads: error
-        if_not_found: success
-        if_ci_failed: failure
-        paths:
-          - "pvlib/.*"
+        flags:
+          - core
+
+      iotools:
+        target: auto
+        flags:
+          - iotools
+
       tests:
         target: 95%
         paths:
           - "pvlib/tests/.*"
+        flags:
+          - core
+          - iotools
 
 comment: off
