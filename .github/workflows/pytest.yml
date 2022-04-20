@@ -24,7 +24,7 @@ jobs:
             environment-type: conda
             suffix: -min
         exclude:
-          - os: macos-latest
+          - os: macos-10.15
             environment-type: conda
           - os: windows-latest
             environment-type: bare
