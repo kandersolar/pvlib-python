@@ -41,12 +41,20 @@ coverage:
         flags:
           - iotools
 
-      tests:
+      tests-core:
         target: 95%
         paths:
-          - "pvlib/tests/.*"
+          - 'pvlib/tests/.*'
+          - '!pvlib/tests/iotools/.*'
         flags:
           - core
+
+      tests-iotools:
+        target: 95%
+        paths:
+          - "pvlib/tests/iotools/.*"
+        flags:
           - iotools
+
 
 comment: off
