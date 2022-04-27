@@ -25,9 +25,7 @@ class Irradiance:
         irradiance.get_extra_radiation(self.days)
 
     def time_aoi(self):
-        irradiance.aoi(self.tilt, self.azimuth,
-                       self.solar_position.apparent_zenith,
-                       self.solar_position.azimuth)
+        irradiance.aoi(self.tilt)
 
     def time_aoi_projection(self):
         irradiance.aoi_projection(self.tilt, self.azimuth,
