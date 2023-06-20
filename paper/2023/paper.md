@@ -40,16 +40,16 @@ bibliography: paper.bib
 
 # Summary
 
-pvlib python is a community-supported, open-source software toolbox
+pvlib python is a community-developed, open-source software toolbox
 for simulating the performance of solar photovoltaic (PV) energy
-systems.  It provides implementations of over 100 empirical and
-physics-based models from the photovoltaic modeling scientific literature,
+systems.  It provides peer-reviewed reference implementations of
+over 100 empirical and physics-based models from the scientific literature,
 including solar position algorithms, irradiance models, thermal models,
 and PV electrical models.  In addition to these individual low-level
 model implementations, pvlib python provides high-level constructs
 that chain these models together like building blocks to form complete
 "weather-to-power" phovoltaic system models.  It also provides functions to fetch
-and import datasets useful for PV modeling.  Unlike other
+and import weather datasets useful for PV modeling.  Unlike other
 popular software for PV modeling, pvlib python integrates natively
 with the rest of the Python ecosystem, making it easy to combine with
 packages for numerical optimization, plotting, and data manipulation,
@@ -61,15 +61,23 @@ testing, standards-based packaging, and semantic versioning.
 \autoref{fig:timeline} shows a timeline of important events in
 the project's history.
 
-![pvlib python major event timeline.\label{fig:timeline}](timeline.png)
+![pvlib python major event timeline.\label{fig:timeline}](timeline2.png)
 
-Here we present an update describing capability enhancements and community
-growth since our 2018 publication [@pvlibjoss2018].
+Python is proving to be the most common choice of programming language
+for open-source PV modeling and analysis software, with pvlib python
+being one member of a growing ecosystem [@Holmgren2018].  Within this
+broader Python-for-PV ecosystem are two packages in the pvlib "family":
+pvanalytics, a package for PV data quality assurance and feature recognition
+algorithms [@pvpmc2022_pvanalytics_update], and twoaxistracking, a package
+for simulating self-shading in arrays with two-axis solar trackers [@Jensen2022].
+
+Here we present an update on pvlib python, describing capability enhancements
+and community growth since our 2018 publication [@pvlibjoss2018].
 
 # Statement of need
 
 Simulation tools are used throughout the field of solar phovoltaics.
-As photovoltaic technologies and economics become increasingly diverse and
+As photovoltaic technologies and systems become increasingly diverse and
 sophisticated, and as the solar energy industry rapidly grows,
 so do the demands placed on these simulation tools.  Flexibility, scalability,
 and transparency are key requirements to meet this demand.  Regarding
@@ -95,38 +103,45 @@ in the past year.
 
 # Functionality additions from v0.6.0 to v0.9.5
 
-Substantial new functionality has been added in the roughly five years
-since the 2018 JOSS publication.  First, several dozen new models have been
+To meet new needs of the PV industry, substantial new functionality has been
+added in the roughly five years since the 2018 JOSS publication.
+
+First, several dozen new models have been
 implemented, expanding the package's capability in both existing and new
 modeling areas and prompting the creation of several
-new modules within pvlib python.  Notable additions include models for rear-side
-irradiance for bifacial PV systems, models for loss mechanisms like soiling
-and snow coverage, and methods of fitting PV performance models to measurements.
+new modules within pvlib python.
+Notable additions include models for loss mechanisms like soiling and snow
+coverage, and methods of fitting PV performance models to measurements.
+Also, to meet the demand for modeling bifacial PV which has become
+a mainstream in recent years, new models have been added to pvlib to
+model rear-side irradiance.
 \autoref{fig:functions-comparison} summarizes the number of models per module
 for pvlib python versions 0.6.0 and 0.9.5.
 
 ![Comparison of public function counts by pvlib module for v0.6.0 and v0.9.5.  Some modules are smaller in v0.9.5 due to moving functions to new modules (e.g. moving functions from `pvsystem` to `iam`, and from `tmy` to `iotools`).\label{fig:functions-comparison}](functions_06_010.png)
 
 Second, in addition to the new function-level model implementations,
-the package's high-level classes have also been expanded to be able to
-simulate more complex system designs, including systems with different
+the package's high-level classes have also been expanded to handle the complexity
+of emerging system designs, including systems with different
 mounting or electrical parameters between subsystems and systems that require
 custom orientation/steering models.
 
 Third, the creation of `pvlib.iotools`, a sub-package for fetching and parsing
-datasets relevant to PV modeling.  These functions provide a uniform interface
-for reading data files in various formats and from various sources.  Additionally,
-they offer conveniences like optionally standardizing the dataset labels and units
+datasets relevant to PV modeling.  These functions provide a standardized
+interface for reading data files in various complex data formats, offering
+conveniences like optionally standardizing the dataset labels and units
 to pvlib conventions.  As of version 0.9.5, `pvlib.iotools` contains
 functions to download data from half a dozen weather dataset providers,
 plus file reading/parsing functions for twice that number of solar resource file formats.
 
-These additions are discussed in more detail in [@pvpmc_2023_update] and [@pvpmc_2022_update].
+These additions are discussed in more detail in [@pvpmc_2023_update] and [@pvpmc2022_pvlib_update].
 Complete descriptions of the changes in each release can be found in the
 project's documentation.
 
 
 # Community
+
+TODO: merged PRs by version
 
 pvlib python's codebase contains contributions from over 100 people, spanning
 industry, academia, and government research institutions.
@@ -149,8 +164,12 @@ illustrates healthy community development:
 Finally, we highlight the pvlib tutorial sessions and users group meetings
 run by both pvlib python maintainers and broader community members in recent
 years.  To date, these meetings have been held at the IEEE Photovoltaics Specialists
-Conference (PVSC), the PV Performance Modeling Workshops, and PyData Global.
+Conference (PVSC), the PVPMC Workshops, and PyData Global.
 
+
+# Commercial adoption
+
+TODO
 
 # Acknowledgements
 
@@ -165,13 +184,8 @@ sources, including:
 
 pvlib python benefits enormously from building on top of
 various high-quality packages that have become de facto standards in the python
-ecosystem.  Here is an incomplete list of such packages used in pvlib python:
-
-- Numerics: numpy, pandas, scipy, numba
-- Plotting: matplotlib
-- Documentation: sphinx
-- Testing: pytest
-
+ecosystem: numpy, pandas, scipy, numba (numerics), matplotlib (plotting),
+sphinx (documentation), and pytest (automated testing).
 The project also benefits from online infrastructure generously provided free
 of charge, including GitHub (code development and automated testing) and
 ReadTheDocs.org (documentation building and hosting).
