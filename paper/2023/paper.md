@@ -48,7 +48,8 @@ including solar position algorithms, irradiance models, thermal models,
 and PV electrical models.  In addition to these individual low-level
 model implementations, pvlib python provides high-level constructs
 that chain these models together like building blocks to form complete
-"weather-to-power" phovoltaic system models.
+"weather-to-power" phovoltaic system models.  It also provides functions to
+fetch and import weather datasets useful for PV modeling. 
 
 Unlike other popular software for PV modeling, pvlib python has the benefit
 of integrating natively with a general-purpose programming language (Python).
@@ -63,7 +64,6 @@ practices for open-source python software, with comprehensive automated
 testing, standards-based packaging, and semantic versioning.  Its emphasis
 on re-use, community, transparency, and peer review has lead to its widespread
 adoption across the PV field [@Stein2022].
-
 Here we present an update on pvlib python describing capability
 and community development since our 2018 publication [@pvlibjoss2018].
 
@@ -81,9 +81,9 @@ of Energy states that "the importance of accurate modeling is hard to overstate"
 
 pvlib python's reusable toolbox design, along with being embedded within the
 broader Python and PyData ecosystems, offers a flexibility and scalability
-unmatched by any other solar energy simulation tool.  Its permissive
-open-source license and foundation in published scientific research make it the
-gold standard of transparency in the photovoltaic modeling space.
+unmatched by any other solar energy simulation tool.  Its foundation in
+published scientific research and open peer review approach make it
+a leader in transparency in the photovoltaic modeling space.
 
 The fact that pvlib python is meeting real needs is made evident by several metrics:
 
@@ -95,7 +95,7 @@ due to being in the top 1% of the index's packages by download count.
 in the past year.
 
 
-# Functionality additions from v0.6.0 to v0.10.0
+# Functionality additions
 
 To meet new needs of the PV industry, substantial new functionality has been
 added in the roughly five years since the 2018 JOSS publication.
@@ -112,7 +112,7 @@ model rear-side irradiance.
 \autoref{fig:functions-comparison} summarizes the number of models per module
 for pvlib python versions 0.6.0 and 0.10.0.
 
-![Comparison of public function counts by pvlib module for v0.6.0 and v0.10.0. Some modules are smaller in v0.10.0 due to moving functions to new modules (e.g. moving functions from `pvsystem` to `iam`).\label{fig:functions-comparison}](functions_06_010.png)
+![Comparison of public function counts by pvlib module for v0.6.0 and v0.10.0. Some modules are smaller in v0.10.0 due to moving functions to new modules (e.g. from `pvsystem` to `iam`).\label{fig:functions-comparison}](functions_06_010.png)
 
 Second, in addition to the new function-level model implementations,
 the package's high-level classes have also been expanded to handle the complexity
@@ -146,11 +146,9 @@ project's use of version control software enables easy quantification of
 repository additions (to code, documentation, tests, etc) over time.  The
 project's repository currently comprises contributions from over 100 people
 spanning industry, academia, and government research institutions.
-\autoref{fig:contributors} tracks the number of unique repository
+\autoref{fig:community} shows the number of unique repository
 contributors over time, demonstrating continued and generally accelerating
 attraction of new contributors.
-
-![Unique code contributors per year (left) and cumulative total (right). TODO: update\label{fig:contributors}](contributors.png)
 
 However, the project as a whole is the product of not only of those who contribute
 code but also those who submit bug reports, propose ideas for new features,
@@ -159,9 +157,9 @@ Along those lines, two easily tracked metrics are the number of people
 registered in the pvlib python online discussion forum and the number of
 GitHub "stars" on the pvlib python code repository. Although these numbers
 almost certainly substantially underestimate the true number of pvlib users,
-their increase over time illustrates healthy community development:
+their increase over time illustrates healthy community development.
 
-![Counts of pvlib python forum members and GitHub stars over time. TODO: update\label{fig:contributors}](community.png)
+![Total repository contributor count over time (left) and other community size statistics (right). TODO: update\label{fig:community}](community.png)
 
 In addition to continuous interaction online, community members sometimes
 meet in person at user's group and tutorial sessions run by pvlib python
@@ -212,9 +210,6 @@ Additional authors?
 - Tutorials?  Silvana
 - Former pvlib python contributors?  Rob, Tony, Cameron, etc
 
-The future?
-
-Commercial adoption?
-
+The future?  Commercial adoption?
 
 # References
