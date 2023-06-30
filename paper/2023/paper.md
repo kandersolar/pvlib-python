@@ -64,6 +64,7 @@ practices for open-source python software, with comprehensive automated
 testing, standards-based packaging, and semantic versioning.  Its emphasis
 on re-use, community, transparency, and peer review has lead to its widespread
 adoption across the PV field [@Stein2022].
+
 Here we present an update on pvlib python describing capability
 and community development since our 2018 publication [@pvlibjoss2018].
 
@@ -112,7 +113,7 @@ model rear-side irradiance.
 \autoref{fig:functions-comparison} summarizes the number of models per module
 for pvlib python versions 0.6.0 and 0.10.0.
 
-![Comparison of public function counts by pvlib module for v0.6.0 and v0.10.0. Some modules are smaller in v0.10.0 due to moving functions to new modules (e.g. from `pvsystem` to `iam`).\label{fig:functions-comparison}](functions_06_010.png)
+![Comparison of public function counts for selected pvlib modules for v0.6.0 and v0.10.0. Some modules are smaller in v0.10.0 due to moving functions to new modules (e.g. from `pvsystem` to `iam`).\label{fig:functions-comparison}](functions_06_010.png)
 
 Second, in addition to the new function-level model implementations,
 the package's high-level classes have also been expanded to handle the complexity
@@ -125,8 +126,8 @@ datasets relevant to PV modeling.  These functions provide a standardized
 interface for reading data files in various complex data formats, offering
 conveniences like optionally standardizing the dataset labels and units
 to pvlib conventions [@Jensen2023].  As of version 0.10.0, `pvlib.iotools` contains
-functions to download data from half a dozen weather dataset providers (UPDATE),
-plus file reading/parsing functions for twice that number of solar resource file formats.
+functions to download data from ten online datasets,
+plus file reading/parsing functions for a dozen solar resource file formats.
 
 These additions are discussed in more detail in [@pvpmc_2023_update] and [@pvpmc2022_pvlib_update].
 Complete descriptions of the changes in each release can be found in the
@@ -177,7 +178,7 @@ pvlib python but also other members of the pvlib "family": pvanalytics, a
 package for PV data quality assurance and feature recognition
 algorithms [@pvpmc2022_pvanalytics_update], and twoaxistracking, a package
 for simulating self-shading in arrays of two-axis solar trackers [@Jensen2022].
-Moreover, looking outside pvlib and its affiliated packages, we see that Python
+Moreover, looking beyond pvlib and its affiliated packages, we see that Python
 is proving to be the most common programming language for open-source PV
 modeling and analysis software in general.  The packages mentioned here
 make up one portion of a growing landscape of Python-for-PV projects [@Holmgren2018].
@@ -191,6 +192,7 @@ sources, including:
 
 - The U.S. Department of Energy’s Solar Energy Technology Office, through
   the PV Performance Modeling Collaborative (PVPMC) and other projects
+- The Danish Energy Agency through grant no. 64020-1082
 - NumFOCUS's Small Development Grant program
 - Google's Summer of Code program
 
@@ -201,6 +203,17 @@ sphinx (documentation), and pytest (automated testing).
 The project also benefits from online infrastructure generously provided free
 of charge, including GitHub (code development and automated testing) and
 ReadTheDocs.org (documentation building and hosting).
+
+This work was supported by the U.S. Department of Energy’s Office of Energy
+Efficiency and Renewable Energy (EERE) under the Solar Energy Technologies
+Office Award Number 38267. Sandia National Laboratories is a multimission
+laboratory managed and operated by National Technology & Engineering Solutions
+of Sandia, LLC, a wholly owned subsidiary of Honeywell International Inc., for
+the U.S. Department of Energy’s National Nuclear Security Administration under
+contract DE-NA0003525. This paper describes objective technical results and
+analysis. Any subjective views or opinions that might be expressed in the paper
+do not necessarily represent the views of the U.S. Department of Energy or
+the United States Government.
 
 # NOTES/TODO
 
