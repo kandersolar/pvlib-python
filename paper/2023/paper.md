@@ -151,16 +151,19 @@ spanning industry, academia, and government research institutions.
 contributors over time, demonstrating continued and generally accelerating
 attraction of new contributors.
 
+![Total repository contributor count over time (left) and other community size statistics (right). TODO: update\label{fig:community}](community.png)
+
 However, the project as a whole is the product of not only of those who contribute
 code but also those who submit bug reports, propose ideas for new features,
 participate in online fora, and support the project in other ways.
 Along those lines, two easily tracked metrics are the number of people
 registered in the pvlib python online discussion forum and the number of
-GitHub "stars" on the pvlib python code repository. Although these numbers
-almost certainly substantially underestimate the true number of pvlib users,
-their increase over time illustrates healthy community development.
+GitHub "stars" on the pvlib python code repository.  \autoref{fig:community}
+shows these counts over time.  Although these numbers
+almost certainly substantially underestimate the true size of the pvlib community,
+their increase over time indicates continued and accelerating community growth.
 
-![Total repository contributor count over time (left) and other community size statistics (right). TODO: update\label{fig:community}](community.png)
+![pvlib python major event timeline: releases (top), community events (middle), and other project milestones (bottom).\label{fig:timeline}](timeline2.png)
 
 In addition to continuous interaction online, community members sometimes
 meet in person at user's group and tutorial sessions run by pvlib python
@@ -169,8 +172,6 @@ To date, these meetings have been held at the IEEE Photovoltaics Specialists
 Conference (PVSC), the PVPMC Workshops, and PyData Global.
 \autoref{fig:timeline} shows a timeline of these meetings, along with other
 notable events in the project's history.
-
-![pvlib python major event timeline.\label{fig:timeline}](timeline2.png)
 
 Finally, it is worth pointing out that pvlib python contributors and users
 are part of a broader community around not just
