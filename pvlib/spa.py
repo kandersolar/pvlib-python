@@ -407,6 +407,29 @@ NUTATION_YTERM_ARRAY = np.array([
 ])
 
 
+def _horner_polyval_numpy(coefficients, x):
+    y = np.zeros_like(x)
+    for c in coefficients:
+        np.multiply(x, y, out=y)
+        np.add(c, y, out=y)
+    return y
+
+
+@jcompile(nopython=True)
+def _horner_polyval_numba(coefficients, x):
+    y = 0.
+    for c in coefficients:
+        y = c + x * y
+    return y
+
+
+@jcompile(nopython=True)
+def _horner_polyval(coefficients, x):
+    if USE_NUMBA:
+        return _horner_polyval_numba(coefficients, x)
+    return _horner_polyval_numpy(coefficients, x)
+
+
 @jcompile('float64(int64, int64, int64, int64, int64, int64, int64)',
           nopython=True)
 def julian_day_dt(year, month, day, hour, minute, second, microsecond):
@@ -460,12 +483,33 @@ def julian_ephemeris_millennium(julian_ephemeris_century):
 # numba.types API, meaning numba must be available to import.
 # https://github.com/numba/numba/issues/4511
 @jcompile(nopython=True)
-def sum_mult_cos_add_mult(arr, x):
-    # shared calculation used for heliocentric longitude, latitude, and radius
+def sum_mult_cos_add_mult_numba(arr, x):
     s = 0.
     for row in range(arr.shape[0]):
         s += arr[row, 0] * np.cos(arr[row, 1] + arr[row, 2] * x)
     return s
+
+
+def sum_mult_cos_add_mult_numpy(arr, x):
+    s = np.zeros_like(x)
+    temp = np.empty_like(x)
+    for row in range(arr.shape[0]):
+        # s += arr[row, 0] * np.cos(arr[row, 1] + arr[row, 2] * x)
+        np.multiply(arr[row, 2], x, temp)
+        np.add(arr[row, 1], temp, temp)
+        np.cos(temp, temp)
+        np.multiply(arr[row, 0], temp, temp)
+        np.add(s, temp, s)
+    return s
+
+
+@jcompile(nopython=True)
+def sum_mult_cos_add_mult(arr, x):
+    # shared calculation used for heliocentric longitude, latitude, and radius
+    if USE_NUMBA:
+        return sum_mult_cos_add_mult_numba(arr, x)
+    return sum_mult_cos_add_mult_numpy(arr, x)
+
 
 @jcompile('float64(float64)', nopython=True)
 def heliocentric_longitude(jme):
@@ -475,11 +519,10 @@ def heliocentric_longitude(jme):
     l3 = sum_mult_cos_add_mult(L3, jme)
     l4 = sum_mult_cos_add_mult(L4, jme)
     l5 = sum_mult_cos_add_mult(L5, jme)
-
-    l_rad = (l0 + l1 * jme + l2 * jme**2 + l3 * jme**3 + l4 * jme**4 +
-             l5 * jme**5)/10**8
+    l_rad = _horner_polyval([l5, l4, l3, l2, l1, l0], jme) / 10**8
     l = np.rad2deg(l_rad)
     return l % 360
+
 
 @jcompile('float64(float64)', nopython=True)
 def heliocentric_latitude(jme):
@@ -498,8 +541,7 @@ def heliocentric_radius_vector(jme):
     r2 = sum_mult_cos_add_mult(R2, jme)
     r3 = sum_mult_cos_add_mult(R3, jme)
     r4 = sum_mult_cos_add_mult(R4, jme)
-
-    r = (r0 + r1 * jme + r2 * jme**2 + r3 * jme**3 + r4 * jme**4)/10**8
+    r = _horner_polyval([r4, r3, r2, r1, r0], jme) / 10**8
     return r
 
 
@@ -517,54 +559,44 @@ def geocentric_latitude(heliocentric_latitude):
 
 @jcompile('float64(float64)', nopython=True)
 def mean_elongation(julian_ephemeris_century):
-    x0 = (297.85036
-          + 445267.111480 * julian_ephemeris_century
-          - 0.0019142 * julian_ephemeris_century**2
-          + julian_ephemeris_century**3 / 189474)
+    coefficients = [1 / 189474, -0.0019142, 445267.111480, 297.85036]
+    x0 = _horner_polyval(coefficients, julian_ephemeris_century)
     return x0
 
 
 @jcompile('float64(float64)', nopython=True)
 def mean_anomaly_sun(julian_ephemeris_century):
-    x1 = (357.52772
-          + 35999.050340 * julian_ephemeris_century
-          - 0.0001603 * julian_ephemeris_century**2
-          - julian_ephemeris_century**3 / 300000)
+    coefficients = [1 / 300000, -0.0001603, 35999.050340, 357.52772]
+    x1 = _horner_polyval(coefficients, julian_ephemeris_century)
     return x1
 
 
 @jcompile('float64(float64)', nopython=True)
 def mean_anomaly_moon(julian_ephemeris_century):
-    x2 = (134.96298
-          + 477198.867398 * julian_ephemeris_century
-          + 0.0086972 * julian_ephemeris_century**2
-          + julian_ephemeris_century**3 / 56250)
+    coefficients = [1 / 56250, 0.0086972, 477198.867398, 134.96298]
+    x2 = _horner_polyval(coefficients, julian_ephemeris_century)
     return x2
 
 
 @jcompile('float64(float64)', nopython=True)
 def moon_argument_latitude(julian_ephemeris_century):
-    x3 = (93.27191
-          + 483202.017538 * julian_ephemeris_century
-          - 0.0036825 * julian_ephemeris_century**2
-          + julian_ephemeris_century**3 / 327270)
+    coefficients = [1 / 327270, -0.0036825, 483202.017538, 93.27191]
+    x3 = _horner_polyval(coefficients, julian_ephemeris_century)
     return x3
 
 
 @jcompile('float64(float64)', nopython=True)
 def moon_ascending_longitude(julian_ephemeris_century):
-    x4 = (125.04452
-          - 1934.136261 * julian_ephemeris_century
-          + 0.0020708 * julian_ephemeris_century**2
-          + julian_ephemeris_century**3 / 450000)
+    coefficients = [1 / 450000, 0.0020708, -1934.136261, 125.04452]
+    x4 = _horner_polyval(coefficients, julian_ephemeris_century)
     return x4
 
 
 @jcompile(
     'void(float64, float64, float64, float64, float64, float64, float64[:])',
     nopython=True)
-def longitude_obliquity_nutation(julian_ephemeris_century, x0, x1, x2, x3, x4,
-                                 out):
+def _longitude_obliquity_nutation_numba(julian_ephemeris_century, x0, x1, x2,
+                                        x3, x4, out):
     delta_psi_sum = 0.0
     delta_eps_sum = 0.0
     for row in range(NUTATION_YTERM_ARRAY.shape[0]):
@@ -592,13 +624,67 @@ def longitude_obliquity_nutation(julian_ephemeris_century, x0, x1, x2, x3, x4,
     out[1] = delta_eps
 
 
+def _longitude_obliquity_nutation_numpy(julian_ephemeris_century, x0, x1, x2,
+                                        x3, x4, out):
+    delta_psi_sum = np.zeros_like(x0)
+    delta_eps_sum = np.zeros_like(x0)
+
+    arg = np.empty_like(x0)
+    temp1 = np.empty_like(x0)
+    temp2 = np.empty_like(x0)
+
+    for row in range(NUTATION_YTERM_ARRAY.shape[0]):
+        a = NUTATION_ABCD_ARRAY[row, 0]
+        b = NUTATION_ABCD_ARRAY[row, 1]
+        c = NUTATION_ABCD_ARRAY[row, 2]
+        d = NUTATION_ABCD_ARRAY[row, 3]
+
+        np.multiply(NUTATION_YTERM_ARRAY[row, 0], x0, arg)
+        np.multiply(NUTATION_YTERM_ARRAY[row, 1], x1, temp1)
+        np.add(arg, temp1, arg)
+        np.multiply(NUTATION_YTERM_ARRAY[row, 2], x2, temp1)
+        np.add(arg, temp1, arg)
+        np.multiply(NUTATION_YTERM_ARRAY[row, 3], x3, temp1)
+        np.add(arg, temp1, arg)
+        np.multiply(NUTATION_YTERM_ARRAY[row, 4], x4, temp1)
+        np.add(arg, temp1, arg)
+
+        np.multiply(b, julian_ephemeris_century, temp2)
+        np.add(a, temp2, temp2)
+        np.sin(arg, temp1)
+        np.multiply(temp1, temp2, temp1)
+        np.add(temp1, delta_psi_sum, delta_psi_sum)
+        
+        temp2 = np.empty_like(x0)
+        np.multiply(d, julian_ephemeris_century, temp2)
+        np.add(c, temp2, temp2)
+        np.cos(arg, temp1)
+        np.multiply(temp1, temp2, temp1)
+        np.add(temp1, delta_eps_sum, delta_eps_sum)
+
+    np.divide(delta_psi_sum, 36000000, delta_psi_sum)
+    np.divide(delta_eps_sum, 36000000, delta_eps_sum)
+
+    out[0] = delta_psi_sum
+    out[1] = delta_eps_sum
+
+
+@jcompile(nopython=True)
+def longitude_obliquity_nutation(julian_ephemeris_century, x0, x1, x2, x3, x4,
+                                 out):
+    if USE_NUMBA:
+        return _longitude_obliquity_nutation_numba(julian_ephemeris_century,
+                                                   x0, x1, x2, x3, x4, out)
+    return _longitude_obliquity_nutation_numpy(julian_ephemeris_century,
+                                               x0, x1, x2, x3, x4, out)
+
+
 @jcompile('float64(float64)', nopython=True)
 def mean_ecliptic_obliquity(julian_ephemeris_millennium):
     U = 1.0*julian_ephemeris_millennium/10
-    e0 = (84381.448 - 4680.93 * U - 1.55 * U**2
-          + 1999.25 * U**3 - 51.38 * U**4 - 249.67 * U**5
-          - 39.05 * U**6 + 7.12 * U**7 + 27.87 * U**8
-          + 5.79 * U**9 + 2.45 * U**10)
+    coefficients = [2.45, 5.79, 27.87, 7.12, -39.05, -249.67, -51.38,
+                    1999.25, -1.55, -4680.93, 84381.448]
+    e0 = _horner_polyval(coefficients, U)
     return e0
 
 
@@ -819,11 +905,9 @@ def topocentric_azimuth_angle(topocentric_astronomers_azimuth):
 
 @jcompile('float64(float64)', nopython=True)
 def sun_mean_longitude(julian_ephemeris_millennium):
-    M = (280.4664567 + 360007.6982779 * julian_ephemeris_millennium
-         + 0.03032028 * julian_ephemeris_millennium**2
-         + julian_ephemeris_millennium**3 / 49931
-         - julian_ephemeris_millennium**4 / 15300
-         - julian_ephemeris_millennium**5 / 2000000)
+    coefficients = [-1 / 2000000, -1 / 15300, 1 / 49931, 0.03032028,
+                    360007.6982779, 280.4664567]
+    M = _horner_polyval(coefficients, julian_ephemeris_millennium)
     return M
 
 
