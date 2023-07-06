@@ -423,11 +423,10 @@ def _horner_polyval_numba(coefficients, x):
     return y
 
 
-@jcompile(nopython=True)
-def _horner_polyval(coefficients, x):
-    if USE_NUMBA:
-        return _horner_polyval_numba(coefficients, x)
-    return _horner_polyval_numpy(coefficients, x)
+if USE_NUMBA:
+    _horner_polyval = _horner_polyval_numba
+else:
+    _horner_polyval = _horner_polyval_numpy
 
 
 @jcompile('float64(int64, int64, int64, int64, int64, int64, int64)',
@@ -484,6 +483,7 @@ def julian_ephemeris_millennium(julian_ephemeris_century):
 # https://github.com/numba/numba/issues/4511
 @jcompile(nopython=True)
 def sum_mult_cos_add_mult_numba(arr, x):
+    # shared calculation used for heliocentric longitude, latitude, and radius
     s = 0.
     for row in range(arr.shape[0]):
         s += arr[row, 0] * np.cos(arr[row, 1] + arr[row, 2] * x)
@@ -494,7 +494,6 @@ def sum_mult_cos_add_mult_numpy(arr, x):
     s = np.zeros_like(x)
     temp = np.empty_like(x)
     for row in range(arr.shape[0]):
-        # s += arr[row, 0] * np.cos(arr[row, 1] + arr[row, 2] * x)
         np.multiply(arr[row, 2], x, temp)
         np.add(arr[row, 1], temp, temp)
         np.cos(temp, temp)
@@ -503,12 +502,10 @@ def sum_mult_cos_add_mult_numpy(arr, x):
     return s
 
 
-@jcompile(nopython=True)
-def sum_mult_cos_add_mult(arr, x):
-    # shared calculation used for heliocentric longitude, latitude, and radius
-    if USE_NUMBA:
-        return sum_mult_cos_add_mult_numba(arr, x)
-    return sum_mult_cos_add_mult_numpy(arr, x)
+if USE_NUMBA:
+    sum_mult_cos_add_mult = sum_mult_cos_add_mult_numba
+else:
+    sum_mult_cos_add_mult = sum_mult_cos_add_mult_numpy
 
 
 @jcompile('float64(float64)', nopython=True)
@@ -595,8 +592,8 @@ def moon_ascending_longitude(julian_ephemeris_century):
 @jcompile(
     'void(float64, float64, float64, float64, float64, float64, float64[:])',
     nopython=True)
-def _longitude_obliquity_nutation_numba(julian_ephemeris_century, x0, x1, x2,
-                                        x3, x4, out):
+def longitude_obliquity_nutation_numba(julian_ephemeris_century, x0, x1, x2,
+                                       x3, x4, out):
     delta_psi_sum = 0.0
     delta_eps_sum = 0.0
     for row in range(NUTATION_YTERM_ARRAY.shape[0]):
@@ -624,8 +621,8 @@ def _longitude_obliquity_nutation_numba(julian_ephemeris_century, x0, x1, x2,
     out[1] = delta_eps
 
 
-def _longitude_obliquity_nutation_numpy(julian_ephemeris_century, x0, x1, x2,
-                                        x3, x4, out):
+def longitude_obliquity_nutation_numpy(julian_ephemeris_century, x0, x1, x2,
+                                       x3, x4):
     delta_psi_sum = np.zeros_like(x0)
     delta_eps_sum = np.zeros_like(x0)
 
@@ -639,44 +636,31 @@ def _longitude_obliquity_nutation_numpy(julian_ephemeris_century, x0, x1, x2,
         c = NUTATION_ABCD_ARRAY[row, 2]
         d = NUTATION_ABCD_ARRAY[row, 3]
 
-        np.multiply(NUTATION_YTERM_ARRAY[row, 0], x0, arg)
-        np.multiply(NUTATION_YTERM_ARRAY[row, 1], x1, temp1)
-        np.add(arg, temp1, arg)
-        np.multiply(NUTATION_YTERM_ARRAY[row, 2], x2, temp1)
-        np.add(arg, temp1, arg)
-        np.multiply(NUTATION_YTERM_ARRAY[row, 3], x3, temp1)
-        np.add(arg, temp1, arg)
-        np.multiply(NUTATION_YTERM_ARRAY[row, 4], x4, temp1)
-        np.add(arg, temp1, arg)
+        np.multiply(NUTATION_YTERM_ARRAY[row, 0], x0, out=arg)
+        np.multiply(NUTATION_YTERM_ARRAY[row, 1], x1, out=temp1)
+        np.add(arg, temp1, out=arg)
+        np.multiply(NUTATION_YTERM_ARRAY[row, 2], x2, out=temp1)
+        np.add(arg, temp1, out=arg)
+        np.multiply(NUTATION_YTERM_ARRAY[row, 3], x3, out=temp1)
+        np.add(arg, temp1, out=arg)
+        np.multiply(NUTATION_YTERM_ARRAY[row, 4], x4, out=temp1)
+        np.add(arg, temp1, out=arg)
 
-        np.multiply(b, julian_ephemeris_century, temp2)
-        np.add(a, temp2, temp2)
-        np.sin(arg, temp1)
-        np.multiply(temp1, temp2, temp1)
-        np.add(temp1, delta_psi_sum, delta_psi_sum)
+        np.multiply(b, julian_ephemeris_century, out=temp2)
+        np.add(a, temp2, out=temp2)
+        np.sin(arg, out=temp1)
+        np.multiply(temp1, temp2, out=temp1)
+        np.add(temp1, delta_psi_sum, out=delta_psi_sum)
         
-        temp2 = np.empty_like(x0)
-        np.multiply(d, julian_ephemeris_century, temp2)
-        np.add(c, temp2, temp2)
-        np.cos(arg, temp1)
-        np.multiply(temp1, temp2, temp1)
-        np.add(temp1, delta_eps_sum, delta_eps_sum)
+        np.multiply(d, julian_ephemeris_century, out=temp2)
+        np.add(c, temp2, out=temp2)
+        np.cos(arg, out=temp1)
+        np.multiply(temp1, temp2, out=temp1)
+        np.add(temp1, delta_eps_sum, out=delta_eps_sum)
 
-    np.divide(delta_psi_sum, 36000000, delta_psi_sum)
-    np.divide(delta_eps_sum, 36000000, delta_eps_sum)
-
-    out[0] = delta_psi_sum
-    out[1] = delta_eps_sum
-
-
-@jcompile(nopython=True)
-def longitude_obliquity_nutation(julian_ephemeris_century, x0, x1, x2, x3, x4,
-                                 out):
-    if USE_NUMBA:
-        return _longitude_obliquity_nutation_numba(julian_ephemeris_century,
-                                                   x0, x1, x2, x3, x4, out)
-    return _longitude_obliquity_nutation_numpy(julian_ephemeris_century,
-                                               x0, x1, x2, x3, x4, out)
+    np.divide(delta_psi_sum, 36000000, out=delta_psi_sum)
+    np.divide(delta_eps_sum, 36000000, out=delta_eps_sum)
+    return delta_psi_sum, delta_eps_sum
 
 
 @jcompile('float64(float64)', nopython=True)
@@ -962,7 +946,8 @@ def solar_position_loop(unixtime, loc_args, out):
         x3 = moon_argument_latitude(jce)
         x4 = moon_ascending_longitude(jce)
         l_o_nutation = np.empty((2,))
-        longitude_obliquity_nutation(jce, x0, x1, x2, x3, x4, l_o_nutation)
+        longitude_obliquity_nutation_numba(jce, x0, x1, x2, x3, x4,
+                                           l_o_nutation)
         delta_psi = l_o_nutation[0]
         delta_epsilon = l_o_nutation[1]
         epsilon0 = mean_ecliptic_obliquity(jme)
@@ -1075,10 +1060,8 @@ def solar_position_numpy(unixtime, lat, lon, elev, pressure, temp, delta_t,
     x2 = mean_anomaly_moon(jce)
     x3 = moon_argument_latitude(jce)
     x4 = moon_ascending_longitude(jce)
-    l_o_nutation = np.empty((2, len(x0)))
-    longitude_obliquity_nutation(jce, x0, x1, x2, x3, x4, l_o_nutation)
-    delta_psi = l_o_nutation[0]
-    delta_epsilon = l_o_nutation[1]
+    delta_psi, delta_epsilon = longitude_obliquity_nutation_numpy(jce, x0, x1,
+                                                                  x2, x3, x4)
     epsilon0 = mean_ecliptic_obliquity(jme)
     epsilon = true_ecliptic_obliquity(epsilon0, delta_epsilon)
     delta_tau = aberration_correction(R)
