@@ -675,6 +675,7 @@ def longitude_obliquity_nutation_numpy(julian_ephemeris_century, x0, x1, x2,
         np.add(arg, temp1, out=arg)
         np.multiply(NUTATION_YTERM_ARRAY[row, 4], x4, out=temp1)
         np.add(arg, temp1, out=arg)
+        np.radians(arg, out=arg)
 
         np.multiply(b, julian_ephemeris_century, out=temp2)
         np.add(a, temp2, out=temp2)  # temp2 = a + b*jce
@@ -978,6 +979,11 @@ def solar_position_loop(unixtime, loc_args, out):
     sst = loc_args[7]
     esd = loc_args[8]
 
+    # precalculate values that don't depend on time
+    u = uterm(lat)
+    x = xterm(u, lat, elev)
+    y = yterm(u, lat, elev)
+
     for i in range(unixtime.shape[0]):
         utime = unixtime[i]
         jd = julian_day(utime)
@@ -1020,9 +1026,6 @@ def solar_position_loop(unixtime, loc_args, out):
         eot = equation_of_time(m, alpha, delta_psi, epsilon)
         H = local_hour_angle(v, lon, alpha)
         xi = equatorial_horizontal_parallax(R)
-        u = uterm(lat)
-        x = xterm(u, lat, elev)
-        y = yterm(u, lat, elev)
         delta_alpha = parallax_sun_right_ascension(x, xi, H, delta)
         delta_prime = topocentric_sun_declination(delta, x, y, xi, delta_alpha,
                                                   H)
