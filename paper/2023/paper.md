@@ -175,8 +175,6 @@ shows these counts over time.  Although these numbers
 almost certainly substantially underestimate the true size of the pvlib community,
 their increase over time indicates continued and accelerating community growth.
 
-![pvlib python major event timeline: releases (top), community events (middle), and other project milestones (bottom).\label{fig:timeline}](timeline2.png)
-
 In addition to continuous interaction online, community members sometimes
 meet in person at user's group and tutorial sessions run by pvlib python
 maintainers and community members alike.
@@ -184,6 +182,8 @@ To date, these meetings have been held at the IEEE Photovoltaics Specialists
 Conference (PVSC), the PVPMC Workshops, and the PyData Global conference.
 \autoref{fig:timeline} shows a timeline of these meetings, along with other
 notable events in the project's history.
+
+![pvlib python major event timeline: releases (top), community events (middle), and other project milestones (bottom).\label{fig:timeline}](timeline2.png)
 
 Finally, it is worth pointing out that pvlib python contributors and users
 are part of a broader community around not just pvlib python itself
