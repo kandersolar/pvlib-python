@@ -49,7 +49,7 @@ including solar position algorithms, irradiance models, thermal models,
 and PV electrical models.  In addition to these individual low-level
 model implementations, pvlib python provides high-level constructs
 that chain these models together like building blocks to form complete
-"weather-to-power" phovoltaic system models.  It also provides functions to
+"weather-to-power" photovoltaic system models.  It also provides functions to
 fetch and import a wide variety of weather datasets useful for PV modeling. 
 
 pvlib python has been developed since 2015 and follows modern best
@@ -66,16 +66,20 @@ and community development since our 2018 publication [@pvlibjoss2018].
 
 # Statement of need
 
-Simulation tools are used throughout the field of solar phovoltaics.
+PV performance models are used throughout the field of solar phovoltaics.
 The rapid increase in scale, technological diversity, and sophistication
 of the global solar energy industry demands correspondingly more
-capable simulation tools.  Per the United States Department of Energy,
+capable models.  Per the United States Department of Energy,
 "the importance of accurate modeling is hard to overstate" [@seto2022].
 
 Compared with other PV modeling tools, pvlib python stands out in several
 key aspects.  One is its reusable toolbox design, providing the user a
-level of flexibility unmatched by other tools, which are typically limited
-to a particular set of modeling workflows hardcoded into the software.
+level of flexibility beyond that of other tools.  Rather than organizing
+the user interface around pre-built modeling workflows, pvlib python
+makes the individual "building blocks" of PV performance models accessible to
+the user.  This allows the user to assemble their own model workflows, including
+the ability of inserting their own custom modeling steps.  This flexibility
+is essential for applications in both academia and industry.
 
 Another key aspect of pvlib python is that it is used via
 a general-purpose programming language (Python).  In addition to being more
@@ -83,12 +87,13 @@ generally flexible, powerful, and scalable than a traditional
 graphical user interface, pvlib python's interface as a programming library
 allows it to be combined with other Python packages.  This enables
 integration with database query, data manipulation, numerical optimization,
-plotting, and reporting packages, to name just a few.
+plotting, and reporting packages, to name a few.
 
 A final key aspect of pvlib python is its open peer review approach and
 foundation in published scientific research, allowing it to be developed by
 a decentralized and diverse community of PV researchers and practitioners
-without compromising its reputation for transparent and reliable modeling.
+without compromising its focus on transparent and reliable model
+implementations.
 
 These core tenets, along with sustained contributions from a passionate and
 committed community, have lead to its widespread adoption across the PV
@@ -97,7 +102,7 @@ meaningful value and addresses real needs, we list these quantitative metrics:
 
 1. Its 2018 JOSS publication, at the time of this writing,
 ranks 14th by citation count out of the 2000+ papers published by JOSS to date.
-2. The Python Package Index (PyPI) classifies pvlib-python as "critical project"
+2. The Python Package Index (PyPI) classifies pvlib python as "critical project"
 due to being in the top 1% of the index's packages by download count.
 3. The project's online documentation currently receives over 400,000 page views
 per year.
@@ -116,8 +121,9 @@ Notable additions include methods of fitting empirical PV performance models
 to measurements, models for performance loss mechanisms like soiling and snow
 coverage, and models for simulating rear-side irradiance (prompted by the recent rapid
 increase in bifacial PV deployment).
-\autoref{fig:functions-comparison} summarizes the number of models per module
-for pvlib python versions 0.6.0 and 0.10.1.
+\autoref{fig:functions-comparison} summarizes the number of models (or functions)
+per module for pvlib python versions 0.6.0 and 0.10.1, showing a substantial
+capability expansion over the last five years.
 
 ![Comparison of public function counts for selected pvlib modules for v0.6.0 and v0.10.1. Some modules are smaller in v0.10.1 due to moving functions to new modules (e.g. from `pvsystem` to `iam`).\label{fig:functions-comparison}](functions_06_010.png)
 
@@ -140,7 +146,7 @@ Complete descriptions of the changes in each release can be found in the
 project's documentation.
 
 
-# Community
+# Community growth
 
 It is difficult or impossible to comprehensively describe the community around
 open-source projects like pvlib python, but some aspects of it are more easily
