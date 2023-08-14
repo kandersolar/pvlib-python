@@ -106,6 +106,9 @@ ranks 14th by citation count out of the 2000+ papers published by JOSS to date.
 due to being in the top 1% of the index's packages by download count.
 3. The project's online documentation currently receives over 400,000 page views
 per year.
+4. pvlib python was found to be the third most used python project
+in the broader open-source sustainability software landscape, with the first
+two being netCDF4 utilities applicable across many scientific fields [@Augspurger2023].
 
 
 # Functionality additions
