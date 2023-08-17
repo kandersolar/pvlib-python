@@ -140,7 +140,7 @@ Third, the creation of `pvlib.iotools`, a sub-package for fetching and parsing
 datasets relevant to PV modeling.  These functions provide a standardized
 interface for reading data files in various complex data formats, offering
 conveniences like optionally standardizing the dataset labels and units
-to pvlib's conventions [@Jensen2023].  As of version 0.10.1, `pvlib.iotools` contains
+to pvlib's conventions [@pvlibiotools].  As of version 0.10.1, `pvlib.iotools` contains
 functions to download data from ten online datasets,
 plus file reading/parsing functions for a dozen solar resource file formats.
 
