@@ -60,7 +60,7 @@ distributed via the Python Package Index (PyPI) and the conda-forge
 repository.  pvlib python's source code is made freely available under
 the permissive BSD-3 license.
 
-Here we present an update on pvlib python describing capability
+Here we present an update on pvlib python, describing capability
 and community development since our 2018 publication [@pvlibjoss2018].
 
 
@@ -78,7 +78,7 @@ level of flexibility beyond that of other tools.  Rather than organizing
 the user interface around pre-built modeling workflows, pvlib python
 makes the individual "building blocks" of PV performance models accessible to
 the user.  This allows the user to assemble their own model workflows, including
-the ability of inserting their own custom modeling steps.  This flexibility
+the ability of incorporating their own custom modeling steps.  This flexibility
 is essential for applications in both academia and industry.
 
 Another key aspect of pvlib python is that it is used via
@@ -98,13 +98,13 @@ implementations.
 These core tenets, along with sustained contributions from a passionate and
 committed community, have lead to its widespread adoption across the PV
 field [@Stein2022].  In support of the claim that pvlib python provides
-meaningful value and addresses real needs, we list these quantitative metrics:
+meaningful value and addresses real needs, we offer these quantitative metrics:
 
 1. Its 2018 JOSS publication, at the time of this writing,
 ranks 14th by citation count out of the 2000+ papers published by JOSS to date.
-2. The Python Package Index (PyPI) classifies pvlib python as "critical project"
+2. The Python Package Index (PyPI) classifies pvlib python as a "critical project"
 due to being in the top 1% of the index's packages by download count.
-3. The project's online documentation currently receives over 400,000 page views
+3. The project's online documentation receives over 400,000 page views
 per year.
 4. pvlib python was found to be the third most used python project
 in the broader open-source sustainability software landscape, with the first
@@ -118,30 +118,32 @@ added in the roughly five years since the 2018 JOSS publication.
 
 First, several dozen new models have been
 implemented, expanding the package's capability in both existing and new
-modeling areas and prompting the creation of several
-new modules within pvlib python.
-Notable additions include methods of fitting empirical PV performance models
-to measurements, models for performance loss mechanisms like soiling and snow
-coverage, and models for simulating rear-side irradiance (prompted by the recent rapid
-increase in bifacial PV deployment).
+modeling areas and prompting the creation of several new modules within pvlib python.
+In response to the recent rapid increase in deployment of bifacial PV,
+a capability enhancement of particular note is the inclusion of models for simulating
+irradiance on the rear side of PV modules.
+Other notable additions include methods of fitting empirical PV performance models
+to measurements and models for performance loss mechanisms like soiling and snow
+coverage.  
 \autoref{fig:functions-comparison} summarizes the number of models (or functions)
-per module for pvlib python versions 0.6.0 and 0.10.1, showing a substantial
-capability expansion over the last five years.
+per module for pvlib python versions 0.6.0 (released 2018-09-17) and 0.10.1
+(released 2023-07-03), showing a substantial capability expansion over the
+last five years.
 
-![Comparison of public function counts for selected pvlib modules for v0.6.0 and v0.10.1. Some modules are smaller in v0.10.1 due to moving functions to new modules (e.g. from `pvsystem` to `iam`).\label{fig:functions-comparison}](functions_06_010.png)
+![Comparison of public function counts for selected pvlib modules for v0.6.0 and v0.10.1. Some modules are smaller in v0.10.1 due to moving functions to new modules (e.g. from `pvsystem` to `iam`).\label{fig:functions-comparison}](functions_06_010.pdf)
 
 Second, in addition to the new function-level model implementations,
-the package's high-level classes have also been expanded to better support
-the complexity of emerging system designs, including systems with differing
-mounting or electrical parameters across subsystems and systems that require
+the package's high-level classes have also been expanded to support
+the complexity of emerging system designs, including heterogneous systems whose
+subsystems differ in mounting or electrical configuration and systems that require
 custom orientation/steering models.
 
-Third, the creation of `pvlib.iotools`, a sub-package for fetching and parsing
+Third, the creation of `pvlib.iotools`, a sub-package for fetching and importing
 datasets relevant to PV modeling.  These functions provide a standardized
 interface for reading data files in various complex data formats, offering
-conveniences like optionally standardizing the dataset labels and units
+conveniences like optionally standardizing the dataset variable names and units
 to pvlib's conventions [@pvlibiotools].  As of version 0.10.1, `pvlib.iotools` contains
-functions to download data from ten online datasets,
+functions to download data from over ten online data providers,
 plus file reading/parsing functions for a dozen solar resource file formats.
 
 These additions are discussed in more detail in [@pvpmc_2023_update] and [@pvpmc2022_pvlib_update].
@@ -151,7 +153,7 @@ project's documentation.
 
 # Community growth
 
-It is difficult or impossible to comprehensively describe the community around
+It is difficult to comprehensively describe the community around
 open-source projects like pvlib python, but some aspects of it are more easily
 quantifiable than others.  Here we examine the community from a few convenient
 perspectives, but we emphasize that this section is necessarily a limited view of
@@ -166,14 +168,15 @@ spanning industry, academia, and government research institutions.
 contributors over time, demonstrating continued and generally accelerating
 attraction of new contributors.
 
-![Total repository contributor count over time (left) and other community size statistics (right).\label{fig:community}](community.png)
+![Total repository contributor count over time (left) and other community size statistics (right).\label{fig:community}](community.pdf)
 
 However, the project as a whole is the product of not only of those who contribute
 code but also those who submit bug reports, propose ideas for new features,
 participate in online fora, and support the project in other ways.
 Along those lines, two easily tracked metrics are the number of people
 registered in the pvlib python online discussion forum and the number of
-GitHub "stars" on the pvlib python code repository.  \autoref{fig:community}
+GitHub "stars" (an indicator of an individual's interest, akin to a browser bookmark)
+on the pvlib python code repository.  \autoref{fig:community}
 shows these counts over time.  Although these numbers
 almost certainly substantially underestimate the true size of the pvlib community,
 their increase over time indicates continued and accelerating community growth.
@@ -186,7 +189,7 @@ Conference (PVSC), the PVPMC Workshops, and the PyData Global conference.
 \autoref{fig:timeline} shows a timeline of these meetings, along with other
 notable events in the project's history.
 
-![pvlib python major event timeline: releases (top), community events (middle), and other project milestones (bottom).\label{fig:timeline}](timeline2.png)
+![pvlib python major event timeline: releases (top), community events (middle), and other project milestones (bottom).\label{fig:timeline}](timeline2.pdf)
 
 Finally, it is worth pointing out that pvlib python contributors and users
 are part of a broader community around not just pvlib python itself
@@ -195,8 +198,8 @@ package for PV data quality assurance and feature recognition
 algorithms [@pvpmc2022_pvanalytics_update], and twoaxistracking, a package
 for simulating self-shading in arrays of two-axis solar trackers [@Jensen2022].
 Moreover, looking beyond pvlib and its affiliated packages, we see that Python
-is proving to be the most common programming language for open-source PV
-modeling and analysis software in general.  The packages mentioned here
+is proving to be the most common programming language in general for
+open-source PV modeling and analysis software.  The packages mentioned here
 make up one portion of a growing landscape of Python-for-PV projects [@Holmgren2018].
 
 
@@ -208,7 +211,7 @@ funding sources, including:
 
 - The U.S. Department of Energy’s Solar Energy Technology Office, through
   the PV Performance Modeling Collaborative (PVPMC) and other projects
-- The Danish Energy Agency through grant no. 64020-1082
+- The Danish Energy Agency through grant nos. 64020-1082 and 134232-510237
 - NumFOCUS's Small Development Grant program
 - Google's Summer of Code program
 
@@ -232,14 +235,5 @@ analysis. Any subjective views or opinions that might be expressed in the paper
 do not necessarily represent the views of the U.S. Department of Energy or
 the United States Government.
 
-# NOTES (to be deleted)
-
-Additional authors? 
-
-- PVPMC?  Josh, Marios, Dan
-- Tutorials?  Silvana
-- Former pvlib python contributors?  Rob, Tony, Cameron, etc
-
-The future?  Commercial adoption?
 
 # References
