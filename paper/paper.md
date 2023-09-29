@@ -6,7 +6,7 @@ tags:
   - photovoltaics
   - renewable energy
 authors:
-  - name: Kevin S. Anderson
+  - name: Kevin S. Anderson[^*]
     orcid: 0000-0002-1166-7957
     affiliation: 1
   - name: Clifford W. Hansen
@@ -38,6 +38,7 @@ date: 13 September 2023
 bibliography: paper.bib
 ---
 
+[^*]: Author order is sorted by code commits to the project's main branch since 2018-09-07.
 
 # Summary
 
