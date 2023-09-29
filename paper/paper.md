@@ -9,19 +9,19 @@ authors:
   - name: Kevin S. Anderson[^*]
     orcid: 0000-0002-1166-7957
     affiliation: 1
-  - name: Clifford W. Hansen[^*]
+  - name: Clifford W. Hansen
     orcid: 0000-0002-8620-5378
     affiliation: 1
-  - name: William F. Holmgren[^*]
+  - name: William F. Holmgren
     orcid: 0000-0001-6218-9767
     affiliation: 2
-  - name: Mark A. Mikofski[^*]
+  - name: Mark A. Mikofski
     orcid: 0000-0001-8001-8582
     affiliation: 2
-  - name: Adam R. Jensen[^*]
+  - name: Adam R. Jensen
     orcid: 0000-0002-5554-9856
     affiliation: 3
-  - name: Anton Driesse[^*]
+  - name: Anton Driesse
     orcid: 0000-0003-3023-2155
     affiliation: 4
 affiliations:
@@ -124,8 +124,7 @@ a capability enhancement of particular note is the inclusion of models for simul
 irradiance on the rear side of PV modules.
 Other notable additions include methods of fitting empirical PV performance models
 to measurements and models for performance loss mechanisms like soiling and snow
-coverage.  
-\autoref{fig:functions-comparison} summarizes the number of models (or functions)
+coverage.  \autoref{fig:functions-comparison} summarizes the number of models (or functions)
 per module for pvlib python versions 0.6.0 (released 2018-09-17) and 0.10.1
 (released 2023-07-03), showing a substantial capability expansion over the
 last five years.
