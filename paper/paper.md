@@ -9,19 +9,19 @@ authors:
   - name: Kevin S. Anderson[^*]
     orcid: 0000-0002-1166-7957
     affiliation: 1
-  - name: Clifford W. Hansen
+  - name: Clifford W. Hansen[^*]
     orcid: 0000-0002-8620-5378
     affiliation: 1
-  - name: William F. Holmgren
+  - name: William F. Holmgren[^*]
     orcid: 0000-0001-6218-9767
     affiliation: 2
-  - name: Mark A. Mikofski
+  - name: Mark A. Mikofski[^*]
     orcid: 0000-0001-8001-8582
     affiliation: 2
-  - name: Adam R. Jensen
+  - name: Adam R. Jensen[^*]
     orcid: 0000-0002-5554-9856
     affiliation: 3
-  - name: Anton Driesse
+  - name: Anton Driesse[^*]
     orcid: 0000-0003-3023-2155
     affiliation: 4
 affiliations:
