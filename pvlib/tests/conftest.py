@@ -11,6 +11,7 @@ from functools import wraps
 import pvlib
 from pvlib.location import Location
 
+raise Exception(pvlib.__file__)
 
 pvlib_base_version = Version(Version(pvlib.__version__).base_version)
 
