@@ -5,6 +5,7 @@ on:
   push:
     branches:
     - main
+    - ci-cwd
 
 jobs:
   test:
@@ -74,6 +75,9 @@ jobs:
         run: |
           pip install .[test]
           pip freeze
+
+      - name: Check import location
+        run: python -c "import pvlib; print(pvlib.__file__)"
 
       - name: Run tests
         shell: bash -l {0}  # necessary for conda env to be active
