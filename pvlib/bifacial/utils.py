@@ -200,8 +200,8 @@ def _obstructed_string_length(p1, p2, ob_left, ob_right):
     return d
 
 
-def vf_ground_sky_2d_integ(surface_tilt, gcr, height, pitch, max_rows=10,
-                           npoints=None, vectorize=None):
+def vf_ground_sky_2d_integ(surface_tilt, gcr, height, pitch, g0=0, g1=1,
+                           max_rows=10, npoints=None, vectorize=None):
     """
     Integrated view factor to the sky from the ground underneath
     interior rows of the array.
@@ -218,6 +218,7 @@ def vf_ground_sky_2d_integ(surface_tilt, gcr, height, pitch, max_rows=10,
         same units as ``pitch``.
     pitch : float
         Distance between two rows. Must be in the same units as ``height``.
+    g0, g1 : TODO
     max_rows : int, default 10
         Maximum number of rows to consider in front and behind the current row.
     npoints : int, default 100
@@ -251,25 +252,45 @@ def vf_ground_sky_2d_integ(surface_tilt, gcr, height, pitch, max_rows=10,
     # primary crossed string points:
     # a, b: boundaries of ground segment
     # c, d: upper module edges
-    a = (0, 0)
-    b = (pitch, 0)
-    c = ((k+1)*pitch - 0.5 * collector_width * cosd(surface_tilt),
-         height + 0.5 * collector_width * sind(surface_tilt))
+    a = (g0*pitch, 0)
+    b = (g1*pitch, 0)
+    sign = np.sign(surface_tilt)
+    c = ((k+1)*pitch + sign * 0.5 * collector_width * cosd(surface_tilt),
+         height + sign * 0.5 * collector_width * sind(surface_tilt))
     d = (c[0] - pitch, c[1])
 
-    # view obstruction points (lower module edges)
-    obs_left = (d[0] + collector_width * cosd(surface_tilt),
-                d[1] - collector_width * sind(surface_tilt))
-    obs_right = (obs_left[0] + pitch, obs_left[1])
+    # view obstruction points (module edges, but need to figure out which ones)
+    
+    # first decide whether the left obstruction is the left or right mod edge
+    left = (k*pitch - 0.5 * collector_width * cosd(surface_tilt),
+            height - 0.5 * collector_width * sind(surface_tilt))
+    right = (k*pitch + 0.5 * collector_width * cosd(surface_tilt),
+             height + 0.5 * collector_width * sind(surface_tilt))
+    angle_left = _angle(a, left)
+    angle_right = _angle(a, right)
+    ob_left = (
+        np.where(angle_left > angle_right, right[0], left[0]),
+        np.where(angle_left > angle_right, right[1], left[1])
+    )
+    
+    # now for the right obstruction
+    left = (left[0] + pitch, left[1])
+    right = (right[0] + pitch, right[1])
+    angle_left = _angle(b, left)
+    angle_right = _angle(b, right)
+    ob_right = (
+        np.where(angle_left > angle_right, left[0], right[0]),
+        np.where(angle_left > angle_right, left[1], right[1])
+    )
 
     # hottel string lengths, considering obstructions
-    ac = _obstructed_string_length(a, c, obs_left, obs_right)
-    ad = _obstructed_string_length(a, d, obs_left, obs_right)
-    bc = _obstructed_string_length(b, c, obs_left, obs_right)
-    bd = _obstructed_string_length(b, d, obs_left, obs_right)
+    ac = _obstructed_string_length(a, c, ob_left, ob_right)
+    ad = _obstructed_string_length(a, d, ob_left, ob_right)
+    bc = _obstructed_string_length(b, c, ob_left, ob_right)
+    bd = _obstructed_string_length(b, d, ob_left, ob_right)
 
     # crossed string formula for VF
-    vf_per_slat = np.maximum(0.5 * (1/pitch) * ((ac + bd) - (bc + ad)), 0)
+    vf_per_slat = np.maximum(0.5 * (1/((g1 - g0) * pitch)) * ((ac + bd) - (bc + ad)), 0)
     vf_total = np.sum(vf_per_slat, axis=0)
 
     if input_is_scalar:
