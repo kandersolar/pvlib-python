@@ -404,7 +404,9 @@ def vf_row_ground_2d(surface_tilt, gcr, x):
     return 0.5 * (1 - (1/gcr * cosd(surface_tilt) + x)/p)
 
 
-def vf_row_ground_2d_integ(surface_tilt, gcr, x0=0, x1=1):
+def vf_row_ground_2d_integ(surface_tilt, gcr, height, pitch,
+                           x0=0, x1=1, g0=0, g1=1,
+                           max_rows=20):
     r'''
     Calculate the average view factor to the ground from a segment of the row
     surface between x0 and x1.
@@ -420,6 +422,8 @@ def vf_row_ground_2d_integ(surface_tilt, gcr, x0=0, x1=1):
         = 0, surface facing horizon = 90. [degree]
     gcr : numeric
         Ratio of the row slant length to the row spacing (pitch). [unitless]
+    height : float
+        TODO
     x0 : numeric, default 0.
         Position on the row's slant length, as a fraction of the slant length.
         x0=0 corresponds to the bottom of the row. x0 should be less than x1.
@@ -427,6 +431,8 @@ def vf_row_ground_2d_integ(surface_tilt, gcr, x0=0, x1=1):
     x1 : numeric, default 1.
         Position on the row's slant length, as a fraction of the slant length.
         x1 should be greater than x0. [unitless]
+    g0, g1 : TODO
+    max_rows : TODO
 
     Returns
     -------
@@ -435,12 +441,52 @@ def vf_row_ground_2d_integ(surface_tilt, gcr, x0=0, x1=1):
         [unitless]
 
     '''
-    u = np.abs(x1 - x0)
-    p0 = _vf_poly(surface_tilt, gcr, x0, 1)
-    p1 = _vf_poly(surface_tilt, gcr, x1, 1)
-    with np.errstate(divide='ignore'):
-        result = np.where(u < 1e-6,
-                          vf_row_ground_2d(surface_tilt, gcr, x0),
-                          0.5*(1 - 1/u * (p1 - p0))
-                          )
-    return result
+    # TODO do comprehensive vectorization.
+    # dimensions: row segment (x0, x1), time, k, ground segment (g0, g1), ...
+    
+    input_is_scalar = np.isscalar(surface_tilt)
+
+    collector_width = pitch * gcr
+    surface_tilt = np.atleast_2d(surface_tilt)
+
+    # TODO seems like this should be np.arange(-max_rows, max_rows+1)?
+    # see GH #1867
+    k = np.arange(-max_rows, max_rows)[:, np.newaxis]
+    
+    # view obstruction points (lower module edges)
+    # use a number slightly larger than 0.5 because the obstruction must
+    # be a nonzero distance from all points the VF could be calculated from
+    ob_right = (-pitch - 0.5001 * collector_width * cosd(surface_tilt),
+                height - 0.5001 * collector_width * sind(np.abs(surface_tilt)))
+    ob_left = (ob_right[0] + pitch, ob_right[1])
+    
+    invert = surface_tilt < 0
+    temp = ob_right[0]
+    ob_right = (np.where(invert, -ob_left[0], ob_right[0]), ob_right[1])
+    ob_left = (np.where(invert, -temp, ob_left[0]), ob_left[1])
+
+    # primary crossed string points:
+    # a, b: positions on module
+    # c, d: boundaries of ground segment
+
+    a = ((x0-0.5) * collector_width * cosd(surface_tilt),
+         height + (x0-0.5) * collector_width * sind(surface_tilt))
+    b = ((x1-0.5) * collector_width * cosd(surface_tilt),
+         height + (x1-0.5) * collector_width * sind(surface_tilt))
+    c = ((k+g0)*pitch, 0)
+    d = ((k+g1)*pitch, 0)
+
+    # hottel string lengths, considering obstructions
+    ac = _obstructed_string_length(a, c, ob_left, ob_right)
+    ad = _obstructed_string_length(a, d, ob_left, ob_right)
+    bc = _obstructed_string_length(b, c, ob_left, ob_right)
+    bd = _obstructed_string_length(b, d, ob_left, ob_right)
+
+    # crossed string formula for VF
+    vf_per_slat = np.maximum(0.5 * (1/((x1 - x0) * collector_width)) * ((ac + bd) - (bc + ad)), 0)
+    vf_total = np.sum(vf_per_slat, axis=0)
+    
+    if input_is_scalar:
+        vf_total = vf_total.item()
+
+    return vf_total
