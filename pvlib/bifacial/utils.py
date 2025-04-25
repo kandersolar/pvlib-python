@@ -444,7 +444,9 @@ def vf_row_ground_2d_integ(surface_tilt, gcr, height, pitch,
     gcr : numeric
         Ratio of the row slant length to the row spacing (pitch). [unitless]
     height : float
-        TODO
+        TODO, make optional if x0=g0=0 and x1=g1=1?
+    pitch : float
+        TODO, make optional if x0=g0=0 and x1=g1=1?
     x0 : numeric, default 0.
         Position on the row's slant length, as a fraction of the slant length.
         x0=0 corresponds to the bottom of the row. x0 should be less than x1.
@@ -462,23 +464,28 @@ def vf_row_ground_2d_integ(surface_tilt, gcr, height, pitch,
         [unitless]
 
     '''
-    # TODO do comprehensive vectorization.
-    # dimensions: row segment (x0, x1), time, k, ground segment (g0, g1), ...
+        
+    # dimensions: k/max_rows, ground segment, row segment, time
+
+    surface_tilt = np.atleast_1d(surface_tilt)[np.newaxis, np.newaxis, np.newaxis, :]
     
-    input_is_scalar = np.isscalar(surface_tilt)
-
-    collector_width = pitch * gcr
-    surface_tilt = np.atleast_2d(surface_tilt)
-
+    x0 = np.atleast_1d(x0)[np.newaxis, np.newaxis, :, np.newaxis]
+    x1 = np.atleast_1d(x1)[np.newaxis, np.newaxis, :, np.newaxis]
+    g0 = np.atleast_1d(g0)[np.newaxis, :, np.newaxis, np.newaxis]
+    g1 = np.atleast_1d(g1)[np.newaxis, :, np.newaxis, np.newaxis]
+    
     # TODO seems like this should be np.arange(-max_rows, max_rows+1)?
     # see GH #1867
-    k = np.arange(-max_rows, max_rows)[:, np.newaxis]
+    k = np.arange(-max_rows, max_rows)[:, np.newaxis, np.newaxis, np.newaxis]
     
+    collector_width = pitch * gcr   
+    Lcostheta = collector_width * cosd(surface_tilt)
+    Lsintheta = collector_width * sind(surface_tilt)
+
     # view obstruction points (lower module edges)
     # use a number slightly larger than 0.5 because the obstruction must
     # be a nonzero distance from all points the VF could be calculated from
-    ob_right = (-pitch - 0.5001 * collector_width * cosd(surface_tilt),
-                height - 0.5001 * collector_width * sind(np.abs(surface_tilt)))
+    ob_right = (-pitch - 0.5001 * Lcostheta, height - 0.5001 * abs(Lsintheta))
     ob_left = (ob_right[0] + pitch, ob_right[1])
     
     invert = surface_tilt < 0
@@ -490,10 +497,8 @@ def vf_row_ground_2d_integ(surface_tilt, gcr, height, pitch,
     # a, b: positions on module
     # c, d: boundaries of ground segment
 
-    a = ((x0-0.5) * collector_width * cosd(surface_tilt),
-         height + (x0-0.5) * collector_width * sind(surface_tilt))
-    b = ((x1-0.5) * collector_width * cosd(surface_tilt),
-         height + (x1-0.5) * collector_width * sind(surface_tilt))
+    a = ((x0-0.5) * Lcostheta, height + (x0-0.5) * Lsintheta)
+    b = ((x1-0.5) * Lcostheta, height + (x1-0.5) * Lsintheta)
     c = ((k+g0)*pitch, 0)
     d = ((k+g1)*pitch, 0)
 
@@ -504,10 +509,7 @@ def vf_row_ground_2d_integ(surface_tilt, gcr, height, pitch,
     bd = _obstructed_string_length(b, d, ob_left, ob_right)
 
     # crossed string formula for VF
-    vf_per_slat = np.maximum(0.5 * (1/((x1 - x0) * collector_width)) * ((ac + bd) - (bc + ad)), 0)
-    vf_total = np.sum(vf_per_slat, axis=0)
+    vf_slats = 0.5 * (1/((x1 - x0) * collector_width)) * ((ac + bd) - (bc + ad))
+    vf_total = np.sum(np.maximum(vf_slats, 0), axis=0)  # sum along k dimension
     
-    if input_is_scalar:
-        vf_total = vf_total.item()
-
-    return vf_total
+    return np.squeeze(vf_total)  # todo not sure this is the best choice?
