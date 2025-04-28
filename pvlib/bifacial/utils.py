@@ -240,14 +240,20 @@ def vf_ground_sky_2d_integ(surface_tilt, gcr, height, pitch, g0=0, g1=1,
         )
         warnings.warn(msg, pvlibDeprecationWarning)
 
-    input_is_scalar = np.isscalar(surface_tilt)
+    # dimensions: k/max_rows, ground segment, time
 
-    collector_width = pitch * gcr
-    surface_tilt = np.atleast_2d(np.abs(surface_tilt))
-
+    surface_tilt = np.atleast_1d(surface_tilt)[np.newaxis, np.newaxis, :]
+    
+    g0 = np.atleast_1d(g0)[np.newaxis, :, np.newaxis]
+    g1 = np.atleast_1d(g1)[np.newaxis, :, np.newaxis]
+    
     # TODO seems like this should be np.arange(-max_rows, max_rows+1)?
     # see GH #1867
-    k = np.arange(-max_rows, max_rows)[:, np.newaxis]
+    k = np.arange(-max_rows, max_rows)[:, np.newaxis, np.newaxis]
+
+    collector_width = pitch * gcr   
+    Lcostheta = collector_width * cosd(surface_tilt)
+    Lsintheta = collector_width * sind(surface_tilt)
 
     # primary crossed string points:
     # a, b: boundaries of ground segment
@@ -255,17 +261,14 @@ def vf_ground_sky_2d_integ(surface_tilt, gcr, height, pitch, g0=0, g1=1,
     a = (g0*pitch, 0)
     b = (g1*pitch, 0)
     sign = np.sign(surface_tilt)
-    c = ((k+1)*pitch + sign * 0.5 * collector_width * cosd(surface_tilt),
-         height + sign * 0.5 * collector_width * sind(surface_tilt))
+    c = ((k+1)*pitch + sign * 0.5 * Lcostheta, height + sign * 0.5 * Lsintheta)
     d = (c[0] - pitch, c[1])
 
     # view obstruction points (module edges, but need to figure out which ones)
     
     # first decide whether the left obstruction is the left or right mod edge
-    left = (k*pitch - 0.5 * collector_width * cosd(surface_tilt),
-            height - 0.5 * collector_width * sind(surface_tilt))
-    right = (k*pitch + 0.5 * collector_width * cosd(surface_tilt),
-             height + 0.5 * collector_width * sind(surface_tilt))
+    left = (k*pitch - 0.5 * Lcostheta, height - 0.5 * Lsintheta)
+    right = (k*pitch + 0.5 * Lcostheta, height + 0.5 * Lsintheta)
     angle_left = _angle(a, left)
     angle_right = _angle(a, right)
     ob_left = (
@@ -290,13 +293,10 @@ def vf_ground_sky_2d_integ(surface_tilt, gcr, height, pitch, g0=0, g1=1,
     bd = _obstructed_string_length(b, d, ob_left, ob_right)
 
     # crossed string formula for VF
-    vf_per_slat = np.maximum(0.5 * (1/((g1 - g0) * pitch)) * ((ac + bd) - (bc + ad)), 0)
-    vf_total = np.sum(vf_per_slat, axis=0)
-
-    if input_is_scalar:
-        vf_total = vf_total.item()
-
-    return vf_total
+    vf_slats = 0.5 * (1/((g1 - g0) * pitch)) * ((ac + bd) - (bc + ad))
+    vf_total = np.sum(np.maximum(vf_slats, 0), axis=0)  # sum along k dimension
+    
+    return np.squeeze(vf_total)  # todo not sure this is the best choice?
 
 
 def _vf_poly(surface_tilt, gcr, x, delta):
