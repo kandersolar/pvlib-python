@@ -115,7 +115,8 @@ def _poa_ground_pv(poa_ground, gcr, surface_tilt):
     numeric
         Ground diffuse irradiance on the row plane. [W/m^2]
     """
-    vf_integ = utils.vf_row_ground_2d_integ(surface_tilt, gcr, 0., 1.)
+    vf_integ = utils.vf_row_ground_2d_integ(surface_tilt, gcr,
+                                            height, pitch, 0., 1.)
     return poa_ground * vf_integ
 
 
@@ -332,8 +333,8 @@ def get_irradiance_poa(surface_tilt, surface_azimuth, solar_zenith,
     # method differs from [1], Eq. 7 and Eq. 8; height is defined at row
     # center rather than at row lower edge as in [1].
     vf_gnd_sky = utils.vf_ground_sky_2d_integ(
-        surface_tilt, gcr, height, pitch, max_rows, npoints,
-        vectorize)
+        surface_tilt, gcr, height, pitch, max_rows=max_rows, npoints=npoints,
+        vectorize=vectorize)
     # fraction of row slant height that is shaded from direct irradiance
     f_x = _shaded_fraction(solar_zenith, solar_azimuth, surface_tilt,
                            surface_azimuth, gcr)
