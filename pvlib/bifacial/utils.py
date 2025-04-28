@@ -39,7 +39,8 @@ def _solar_projection_tangent(solar_zenith, solar_azimuth, surface_azimuth):
 
 
 def _unshaded_ground_fraction(surface_tilt, surface_azimuth, solar_zenith,
-                              solar_azimuth, gcr, max_zenith=87):
+                              solar_azimuth, gcr, pitch, height,
+                              g0=0, g1=1, max_rows=10, max_zenith=87):
     r"""
     Calculate the fraction of the ground with incident direct irradiance.
 
@@ -67,6 +68,12 @@ def _unshaded_ground_fraction(surface_tilt, surface_azimuth, solar_zenith,
     gcr : float
         Ground coverage ratio, which is the ratio of row slant length to row
         spacing (pitch). [unitless]
+    height : float
+        Height of the center point of the row above the ground; must be in the
+        same units as ``pitch``.
+    pitch : float
+        Distance between two rows; must be in the same units as ``height``.
+    g0, g1 : TODO
     max_zenith : numeric, default 87
         Maximum zenith angle. For solar_zenith > max_zenith, unshaded ground
         fraction is set to 0. [degree]
@@ -84,12 +91,53 @@ def _unshaded_ground_fraction(surface_tilt, surface_azimuth, solar_zenith,
        Photovoltaic Specialists Conference (PVSC), 2019, pp. 1282-1287.
        :doi:`10.1109/PVSC40753.2019.8980572`.
     """
+    
+    # dimensions: k/max_rows, ground segment, time
+
+    surface_tilt = np.atleast_1d(surface_tilt)[np.newaxis, np.newaxis, :]
+    
+    g0 = np.atleast_1d(g0)[np.newaxis, :, np.newaxis]
+    g1 = np.atleast_1d(g1)[np.newaxis, :, np.newaxis]
+    
+    # TODO seems like this should be np.arange(-max_rows, max_rows+1)?
+    # see GH #1867
+    k = np.arange(-max_rows, max_rows)[:, np.newaxis, np.newaxis]
+
+    collector_width = pitch * gcr
+    Lcostheta = collector_width * cosd(surface_tilt)
+    Lsintheta = collector_width * sind(surface_tilt)
     tan_phi = _solar_projection_tangent(solar_zenith, solar_azimuth,
                                         surface_azimuth)
-    f_gnd_beam = 1.0 - np.minimum(
-        1.0, gcr * np.abs(cosd(surface_tilt) + sind(surface_tilt) * tan_phi))
-    np.where(solar_zenith > max_zenith, 0., f_gnd_beam)  # [1], Eq. 4
-    return f_gnd_beam  # 1 - min(1, abs()) < 1 always
+
+    # a, b: boundaries of ground segment
+    # d, c: left/right shading module edges
+    c = (k*pitch + 0.5 * Lcostheta, height + 0.5 * Lsintheta)
+    d = (k*pitch - 0.5 * Lcostheta, height - 0.5 * Lsintheta)
+
+    cp = c[0] + c[1] * tan_phi
+    dp = d[0] + d[1] * tan_phi
+    a = g0*pitch
+    b = g1*pitch
+
+    # individual contributions from all k rows
+    # TODO bug with zenith=0, fix these < > <= >=
+    fs = np.zeros_like(cp)
+    fs = np.where((dp < a) & (cp > b), 1.0, fs)
+    fs = np.where((dp < a) & (a < cp) & (cp < b), (cp - a) / (b - a), fs)
+    #fs = np.where((dp < a) & (cp < a), 0.0, fs)  # initial value already 0
+    fs = np.where((a < dp) & (dp < b) & (cp > b), (b - dp) / (b - a), fs)
+    fs = np.where((a < dp) & (dp < b) & (a < cp) & (cp < b),
+                  (cp - dp) / (b - a), fs)
+    # fs = np.where((dp > b) & (cp > b), 0.0, fs)  # initial value already 0
+    
+    # total shaded fraction is sum of individuals; note that shadows
+    # never overlap in this model, except when shaded fraction is 100% anyway
+    f_gnd_beam = 1 - np.clip(np.sum(fs, axis=0), 0, 1)  # sum along k dimension
+    
+    # TODO bug here, solar zenith needs to be the right shape
+    f_gnd_beam = np.where(solar_zenith > max_zenith, 0., f_gnd_beam)
+
+    return np.squeeze(f_gnd_beam)  # todo not sure this is the best choice?
 
 
 def vf_ground_sky_2d(rotation, gcr, x, pitch, height, max_rows=10):
