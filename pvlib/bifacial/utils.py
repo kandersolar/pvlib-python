@@ -74,6 +74,7 @@ def _unshaded_ground_fraction(surface_tilt, surface_azimuth, solar_zenith,
     pitch : float
         Distance between two rows; must be in the same units as ``height``.
     g0, g1 : TODO
+    max_rows : TODO
     max_zenith : numeric, default 87
         Maximum zenith angle. For solar_zenith > max_zenith, unshaded ground
         fraction is set to 0. [degree]
@@ -108,6 +109,7 @@ def _unshaded_ground_fraction(surface_tilt, surface_azimuth, solar_zenith,
     Lsintheta = collector_width * sind(surface_tilt)
     tan_phi = _solar_projection_tangent(solar_zenith, solar_azimuth,
                                         surface_azimuth)
+    tan_phi = np.atleast_1d(tan_phi)[np.newaxis, np.newaxis, :]  # same as tilt
 
     # a, b: boundaries of ground segment
     # d, c: left/right shading module edges
@@ -474,8 +476,7 @@ def vf_row_ground_2d(surface_tilt, gcr, x):
 
 
 def vf_row_ground_2d_integ(surface_tilt, gcr, height, pitch,
-                           x0=0, x1=1, g0=0, g1=1,
-                           max_rows=20):
+                           x0=0, x1=1, g0=0, g1=1, max_rows=20):
     r'''
     Calculate the average view factor to the ground from a segment of the row
     surface between x0 and x1.
