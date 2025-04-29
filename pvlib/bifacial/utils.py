@@ -93,6 +93,10 @@ def _unshaded_ground_fraction(surface_tilt, surface_azimuth, solar_zenith,
        :doi:`10.1109/PVSC40753.2019.8980572`.
     """
     
+    swap = (surface_tilt > 90) | (surface_tilt <= -90)
+    surface_tilt = np.where(swap, 180 - surface_tilt, surface_tilt)
+    surface_azimuth = np.where(swap, (180 + surface_azimuth) % 360, surface_azimuth)
+    
     # dimensions: k/max_rows, ground segment, time
 
     surface_tilt = np.atleast_1d(surface_tilt)[np.newaxis, np.newaxis, :]
@@ -115,7 +119,7 @@ def _unshaded_ground_fraction(surface_tilt, surface_azimuth, solar_zenith,
     # d, c: left/right shading module edges
     c = (k*pitch + 0.5 * Lcostheta, height + 0.5 * Lsintheta)
     d = (k*pitch - 0.5 * Lcostheta, height - 0.5 * Lsintheta)
-
+    
     cp = c[0] + c[1] * tan_phi
     dp = d[0] + d[1] * tan_phi
     a = g0*pitch
@@ -240,11 +244,11 @@ def _obstructed_string_length(p1, p2, ob_left, ob_right):
     # unobstructed length
     d = _dist(p1, p2)
     # obstructed on the left
-    d = np.where(_angle(p1, p2) > _angle(p1, ob_left),
+    d = np.where(_angle(p1, p2) - _angle(p1, ob_left) > 1e-6,
                  _dist(p1, ob_left) + _dist(ob_left, p2),
                  d)
     # obstructed on the right
-    d = np.where(_angle(p1, p2) < _angle(p1, ob_right),
+    d = np.where(_angle(p1, ob_right) - _angle(p1, p2) > 1e-6,
                  _dist(p1, ob_right) + _dist(ob_right, p2),
                  d)
     return d
@@ -435,6 +439,15 @@ def vf_row_sky_2d_integ(surface_tilt, gcr, x0=0, x1=1):
         from x0 to x1. [unitless]
 
     '''
+    # dimensions: row segment, time
+    
+    # TODO doesn't work with multiple segments when surface_tilt is negative
+
+    surface_tilt = np.atleast_1d(surface_tilt)[np.newaxis, :]
+    
+    x0 = np.atleast_1d(x0)[:, np.newaxis]
+    x1 = np.atleast_1d(x1)[:, np.newaxis]
+
     u = np.abs(x1 - x0)
     p0 = _vf_poly(surface_tilt, gcr, 1 - x0, -1)
     p1 = _vf_poly(surface_tilt, gcr, 1 - x1, -1)
@@ -443,7 +456,7 @@ def vf_row_sky_2d_integ(surface_tilt, gcr, x0=0, x1=1):
                           vf_row_sky_2d(surface_tilt, gcr, x0),
                           0.5*(1 + 1/u * (p1 - p0))
                           )
-    return result
+    return np.squeeze(result)  # todo not sure this is the best choice?
 
 
 def vf_row_ground_2d(surface_tilt, gcr, x):

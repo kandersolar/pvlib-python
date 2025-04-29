@@ -90,7 +90,7 @@ def _poa_sky_diffuse_pv(dhi, gcr, surface_tilt, x0=0, x1=1):
         Total sky diffuse irradiance incident on the PV surface. [W/m^2]
     """
     vf_integ = utils.vf_row_sky_2d_integ(surface_tilt, gcr, x0, x1)
-    return dhi * vf_integ
+    return np.array(dhi) * vf_integ
 
 
 def _poa_ground_pv(poa_ground, gcr, surface_tilt, height, pitch,
@@ -124,7 +124,7 @@ def _poa_ground_pv(poa_ground, gcr, surface_tilt, height, pitch,
                                             height=height, pitch=pitch,
                                             x0=x0, x1=x1, g0=g0, g1=g1,
                                             max_rows=max_rows)
-    return poa_ground * vf_integ
+    return np.array(poa_ground) * vf_integ
 
 
 def _shaded_fraction(solar_zenith, solar_azimuth, surface_tilt,
@@ -419,7 +419,9 @@ def get_irradiance(surface_tilt, surface_azimuth, solar_zenith, solar_azimuth,
                    gcr, height, pitch, ghi, dhi, dni,
                    albedo, model='isotropic', dni_extra=None, iam_front=1.0,
                    iam_back=1.0, bifaciality=0.8, shade_factor=-0.02,
-                   transmission_factor=0, npoints=None, vectorize=None):
+                   transmission_factor=0,
+                   n_row_segments=1, n_ground_segments=1,
+                   npoints=None, vectorize=None):
     """
     Get front and rear irradiance using the infinite sheds model.
 
@@ -582,6 +584,7 @@ def get_irradiance(surface_tilt, surface_azimuth, solar_zenith, solar_azimuth,
         solar_zenith=solar_zenith, solar_azimuth=solar_azimuth,
         gcr=gcr, height=height, pitch=pitch, ghi=ghi, dhi=dhi, dni=dni,
         albedo=albedo, model=model, dni_extra=dni_extra, iam=iam_front,
+        n_row_segments=n_row_segments, n_ground_segments=n_ground_segments,
         npoints=npoints, vectorize=vectorize)
     # back side POA irradiance
     irrad_back = get_irradiance_poa(
@@ -589,6 +592,7 @@ def get_irradiance(surface_tilt, surface_azimuth, solar_zenith, solar_azimuth,
         solar_zenith=solar_zenith, solar_azimuth=solar_azimuth,
         gcr=gcr, height=height, pitch=pitch, ghi=ghi, dhi=dhi, dni=dni,
         albedo=albedo, model=model, dni_extra=dni_extra, iam=iam_back,
+        n_row_segments=n_row_segments, n_ground_segments=n_ground_segments,
         npoints=npoints, vectorize=vectorize)
 
     colmap_front = {
