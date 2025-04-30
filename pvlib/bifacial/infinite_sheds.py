@@ -174,7 +174,7 @@ def _shaded_fraction(solar_zenith, solar_azimuth, surface_tilt,
     .. [2] Kevin Anderson and Mark Mikofski, "Slope-Aware Backtracking for
        Single-Axis Trackers", Technical Report NREL/TP-5K00-76626, July 2020.
        https://www.nrel.gov/docs/fy20osti/76626.pdf
-    """   
+    """
     tan_phi = utils._solar_projection_tangent(
         solar_zenith, solar_azimuth, surface_azimuth)
     # length of shadow behind a row as a fraction of pitch
@@ -191,9 +191,10 @@ def _shaded_fraction(solar_zenith, solar_azimuth, surface_tilt,
     x0 = np.atleast_1d(x0)[:, np.newaxis]
     x1 = np.atleast_1d(x1)[:, np.newaxis]
     
-    f_s = np.zeros_like(x0)
-    f_s = np.where((f_x > x0) & (f_x < x1), (f_x - x0) / (x1 - x0), f_s)
-    f_s = np.where(f_x > x1, 1.0, f_s)
+    swap = surface_tilt < 0
+    x0, x1 = np.where(swap, 1 - x1, x0), np.where(swap, 1 - x0, x1)
+    
+    f_s = np.clip((f_x - x0) / (x1 - x0), a_min=0, a_max=1)
     
     return np.squeeze(f_s)  # todo not sure this is the best choice?
 
@@ -632,5 +633,6 @@ def get_irradiance(surface_tilt, surface_azimuth, solar_zenith, solar_azimuth,
 
 def _backside(tilt, surface_azimuth):
     backside_tilt = 180. - tilt
+    backside_tilt = np.where(backside_tilt > 180, backside_tilt - 360, backside_tilt)
     backside_sysaz = (180. + surface_azimuth) % 360.
     return backside_tilt, backside_sysaz

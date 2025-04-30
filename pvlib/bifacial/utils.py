@@ -441,12 +441,13 @@ def vf_row_sky_2d_integ(surface_tilt, gcr, x0=0, x1=1):
     '''
     # dimensions: row segment, time
     
-    # TODO doesn't work with multiple segments when surface_tilt is negative
-
     surface_tilt = np.atleast_1d(surface_tilt)[np.newaxis, :]
     
     x0 = np.atleast_1d(x0)[:, np.newaxis]
     x1 = np.atleast_1d(x1)[:, np.newaxis]
+
+    swap = surface_tilt < 0
+    x0, x1 = np.where(swap, 1 - x1, x0), np.where(swap, 1 - x0, x1)
 
     u = np.abs(x1 - x0)
     p0 = _vf_poly(surface_tilt, gcr, 1 - x0, -1)
