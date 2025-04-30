@@ -143,7 +143,7 @@ def _unshaded_ground_fraction(surface_tilt, surface_azimuth, solar_zenith,
     # TODO bug here, solar zenith needs to be the right shape
     f_gnd_beam = np.where(solar_zenith > max_zenith, 0., f_gnd_beam)
 
-    return np.squeeze(f_gnd_beam)  # todo not sure this is the best choice?
+    return f_gnd_beam
 
 
 def vf_ground_sky_2d(rotation, gcr, x, pitch, height, max_rows=10):
@@ -350,7 +350,7 @@ def vf_ground_sky_2d_integ(surface_tilt, gcr, height, pitch, g0=0, g1=1,
     vf_slats = 0.5 * (1/((g1 - g0) * pitch)) * ((ac + bd) - (bc + ad))
     vf_total = np.sum(np.maximum(vf_slats, 0), axis=0)  # sum along k dimension
     
-    return np.squeeze(vf_total)  # todo not sure this is the best choice?
+    return vf_total
 
 
 def _vf_poly(surface_tilt, gcr, x, delta):
@@ -457,7 +457,7 @@ def vf_row_sky_2d_integ(surface_tilt, gcr, x0=0, x1=1):
                           vf_row_sky_2d(surface_tilt, gcr, x0),
                           0.5*(1 + 1/u * (p1 - p0))
                           )
-    return np.squeeze(result)  # todo not sure this is the best choice?
+    return result
 
 
 def vf_row_ground_2d(surface_tilt, gcr, x):
@@ -575,4 +575,4 @@ def vf_row_ground_2d_integ(surface_tilt, gcr, height, pitch,
     vf_slats = 0.5 * (1/((x1 - x0) * collector_width)) * ((ac + bd) - (bc + ad))
     vf_total = np.sum(np.maximum(vf_slats, 0), axis=0)  # sum along k dimension
     
-    return np.squeeze(vf_total)  # todo not sure this is the best choice?
+    return vf_total

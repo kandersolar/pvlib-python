@@ -5,7 +5,8 @@ Functions for the infinite sheds bifacial irradiance model.
 import numpy as np
 import pandas as pd
 from pvlib.tools import cosd, sind, tand
-from pvlib.bifacial import utils
+#from pvlib.bifacial import utils
+import utils
 from pvlib.irradiance import beam_component, aoi, haydavies
 
 
@@ -124,7 +125,7 @@ def _poa_ground_pv(poa_ground, gcr, surface_tilt, height, pitch,
                                             height=height, pitch=pitch,
                                             x0=x0, x1=x1, g0=g0, g1=g1,
                                             max_rows=max_rows)
-    return np.array(poa_ground) * vf_integ
+    return poa_ground * vf_integ
 
 
 def _shaded_fraction(solar_zenith, solar_azimuth, surface_tilt,
@@ -196,7 +197,7 @@ def _shaded_fraction(solar_zenith, solar_azimuth, surface_tilt,
     
     f_s = np.clip((f_x - x0) / (x1 - x0), a_min=0, a_max=1)
     
-    return np.squeeze(f_s)  # todo not sure this is the best choice?
+    return f_s
 
 
 def get_irradiance_poa(surface_tilt, surface_azimuth, solar_zenith,
@@ -348,6 +349,11 @@ def get_irradiance_poa(surface_tilt, surface_azimuth, solar_zenith,
     g0 = x_ground[:-1]
     g1 = x_ground[1:]
 
+    # dimensions: ground segment, row segment, time
+    albedo = np.atleast_2d(albedo)[:, np.newaxis, :]
+    ghi = np.atleast_1d(ghi)[np.newaxis, np.newaxis, :]
+    dhi = np.atleast_1d(dhi)[np.newaxis, np.newaxis, :]
+
     # Calculate some geometric quantities
     # rows to consider in front and behind current row
     # ensures that view factors to the sky are computed to within 5 degrees
@@ -358,6 +364,7 @@ def get_irradiance_poa(surface_tilt, surface_azimuth, solar_zenith,
     f_gnd_beam = utils._unshaded_ground_fraction(
         surface_tilt, surface_azimuth, solar_zenith, solar_azimuth, gcr,
         pitch=pitch, height=height, g0=g0, g1=g1, max_rows=max_rows)
+    f_gnd_beam = f_gnd_beam[:, np.newaxis, :]
     # integrated view factor from the ground to the sky, integrated between
     # adjacent rows interior to the array
     # method differs from [1], Eq. 7 and Eq. 8; height is defined at row
@@ -365,12 +372,15 @@ def get_irradiance_poa(surface_tilt, surface_azimuth, solar_zenith,
     vf_gnd_sky = utils.vf_ground_sky_2d_integ(
         surface_tilt, gcr, height, pitch, g0=g0, g1=g1, max_rows=max_rows,
         npoints=npoints, vectorize=vectorize)
+    vf_gnd_sky = vf_gnd_sky[:, np.newaxis, :]
     # fraction of row slant height that is shaded from direct irradiance
     f_x = _shaded_fraction(solar_zenith, solar_azimuth, surface_tilt,
                            surface_azimuth, gcr, x0, x1)
+    f_x = f_x[np.newaxis, :, :]
 
     # Total sky diffuse received by both shaded and unshaded portions
     poa_sky_pv = _poa_sky_diffuse_pv(dhi, gcr, surface_tilt, x0, x1)
+    poa_sky_pv = poa_sky_pv[0]  # drop unnecesary first dimension
 
     # irradiance reflected from the ground before accounting for shadows
     # and restricted views
@@ -398,6 +408,8 @@ def get_irradiance_poa(surface_tilt, surface_azimuth, solar_zenith,
     poa_gnd_pv = _poa_ground_pv(ground_diffuse, gcr, surface_tilt,
                                 height=height, pitch=pitch, x0=x0, x1=x1,
                                 g0=g0, g1=g1, max_rows=max_rows)
+    poa_gnd_pv = np.sum(poa_gnd_pv, axis=0)  # sum over ground segments
+    
     # add sky and ground-reflected irradiance on the row by irradiance
     # component
     poa_diffuse = poa_gnd_pv + poa_sky_pv
@@ -405,6 +417,7 @@ def get_irradiance_poa(surface_tilt, surface_azimuth, solar_zenith,
     poa_beam = np.atleast_1d(beam_component(
         surface_tilt, surface_azimuth, solar_zenith, solar_azimuth, dni))
     poa_direct = poa_beam * (1 - f_x) * iam  # direct only on the unshaded part
+    poa_direct = poa_direct[0]  # drop unnecessary first dimension
     poa_global = poa_direct + poa_diffuse
 
     output = {
