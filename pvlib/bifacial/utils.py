@@ -38,8 +38,7 @@ def _solar_projection_tangent(solar_zenith, solar_azimuth, surface_azimuth):
     return tan_phi
 
 
-def _unshaded_ground_fraction(surface_tilt, surface_azimuth, solar_zenith,
-                              solar_azimuth, gcr, pitch, height,
+def _unshaded_ground_fraction(tracker_rotation, phi, gcr, pitch, height,
                               g0=0, g1=1, max_rows=10, max_zenith=87):
     r"""
     Calculate the fraction of the ground with incident direct irradiance.
@@ -52,7 +51,7 @@ def _unshaded_ground_fraction(surface_tilt, surface_azimuth, solar_zenith,
     from vertical of the sun vector projected to a vertical plane that
     contains the row azimuth `surface_azimuth`.
 
-    Parameters
+    Parameters  # TODO fix
     ----------
     surface_tilt : numeric
         Surface tilt angle. The tilt angle is defined as
@@ -93,14 +92,14 @@ def _unshaded_ground_fraction(surface_tilt, surface_azimuth, solar_zenith,
        :doi:`10.1109/PVSC40753.2019.8980572`.
     """
     
-    swap = (surface_tilt > 90) | (surface_tilt <= -90)
-    surface_tilt = np.where(swap, 180 - surface_tilt, surface_tilt)
-    surface_azimuth = np.where(swap, (180 + surface_azimuth) % 360, surface_azimuth)
+    swap = (tracker_rotation > 90) | (tracker_rotation <= -90)
+    tracker_rotation = np.where(swap, 180 - tracker_rotation, tracker_rotation)
     
     # dimensions: k/max_rows, ground segment, time
 
-    surface_tilt = np.atleast_1d(surface_tilt)[np.newaxis, np.newaxis, :]
-    
+    tracker_rotation = np.atleast_1d(tracker_rotation)[np.newaxis, np.newaxis, :]
+    phi = np.atleast_1d(phi)[np.newaxis, np.newaxis, :]
+
     g0 = np.atleast_1d(g0)[np.newaxis, :, np.newaxis]
     g1 = np.atleast_1d(g1)[np.newaxis, :, np.newaxis]
     
@@ -109,19 +108,17 @@ def _unshaded_ground_fraction(surface_tilt, surface_azimuth, solar_zenith,
     k = np.arange(-max_rows, max_rows)[:, np.newaxis, np.newaxis]
 
     collector_width = pitch * gcr
-    Lcostheta = collector_width * cosd(surface_tilt)
-    Lsintheta = collector_width * sind(surface_tilt)
-    tan_phi = _solar_projection_tangent(solar_zenith, solar_azimuth,
-                                        surface_azimuth)
-    tan_phi = np.atleast_1d(tan_phi)[np.newaxis, np.newaxis, :]  # same as tilt
+    Lcostheta = collector_width * cosd(tracker_rotation)
+    Lsintheta = collector_width * sind(tracker_rotation)
+    tanphi = tand(phi)
 
     # a, b: boundaries of ground segment
     # d, c: left/right shading module edges
     c = (k*pitch + 0.5 * Lcostheta, height + 0.5 * Lsintheta)
     d = (k*pitch - 0.5 * Lcostheta, height - 0.5 * Lsintheta)
     
-    cp = c[0] + c[1] * tan_phi
-    dp = d[0] + d[1] * tan_phi
+    cp = c[0] + c[1] * tanphi
+    dp = d[0] + d[1] * tanphi
     a = g0*pitch
     b = g1*pitch
 
@@ -140,8 +137,8 @@ def _unshaded_ground_fraction(surface_tilt, surface_azimuth, solar_zenith,
     # never overlap in this model, except when shaded fraction is 100% anyway
     f_gnd_beam = 1 - np.clip(np.sum(fs, axis=0), 0, 1)  # sum along k dimension
     
-    # TODO bug here, solar zenith needs to be the right shape
-    f_gnd_beam = np.where(solar_zenith > max_zenith, 0., f_gnd_beam)
+    # using phi is more convenient, and I think better, than using zenith
+    f_gnd_beam = np.where(phi > 87, 0., f_gnd_beam)
 
     return f_gnd_beam
 
@@ -254,13 +251,13 @@ def _obstructed_string_length(p1, p2, ob_left, ob_right):
     return d
 
 
-def vf_ground_sky_2d_integ(surface_tilt, gcr, height, pitch, g0=0, g1=1,
+def vf_ground_sky_2d_integ(tracker_rotation, gcr, height, pitch, g0=0, g1=1,
                            max_rows=10, npoints=None, vectorize=None):
     """
     Integrated view factor to the sky from the ground underneath
     interior rows of the array.
 
-    Parameters
+    Parameters  TODO Fix
     ----------
     surface_tilt : numeric
         Surface tilt angle in degrees from horizontal, e.g., surface facing up
@@ -296,7 +293,7 @@ def vf_ground_sky_2d_integ(surface_tilt, gcr, height, pitch, g0=0, g1=1,
 
     # dimensions: k/max_rows, ground segment, time
 
-    surface_tilt = np.atleast_1d(surface_tilt)[np.newaxis, np.newaxis, :]
+    tracker_rotation = np.atleast_1d(tracker_rotation)[np.newaxis, np.newaxis, :]
     
     g0 = np.atleast_1d(g0)[np.newaxis, :, np.newaxis]
     g1 = np.atleast_1d(g1)[np.newaxis, :, np.newaxis]
@@ -306,15 +303,15 @@ def vf_ground_sky_2d_integ(surface_tilt, gcr, height, pitch, g0=0, g1=1,
     k = np.arange(-max_rows, max_rows)[:, np.newaxis, np.newaxis]
 
     collector_width = pitch * gcr   
-    Lcostheta = collector_width * cosd(surface_tilt)
-    Lsintheta = collector_width * sind(surface_tilt)
+    Lcostheta = collector_width * cosd(tracker_rotation)
+    Lsintheta = collector_width * sind(tracker_rotation)
 
     # primary crossed string points:
     # a, b: boundaries of ground segment
     # c, d: upper module edges
     a = (g0*pitch, 0)
     b = (g1*pitch, 0)
-    sign = np.sign(surface_tilt)
+    sign = np.sign(tracker_rotation)
     c = ((k+1)*pitch + sign * 0.5 * Lcostheta, height + sign * 0.5 * Lsintheta)
     d = (c[0] - pitch, c[1])
 

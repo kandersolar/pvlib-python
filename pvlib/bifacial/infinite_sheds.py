@@ -7,8 +7,9 @@ import pandas as pd
 from pvlib.tools import cosd, sind, tand
 #from pvlib.bifacial import utils
 import utils
-from pvlib.irradiance import beam_component, aoi, haydavies
-
+from pvlib.irradiance import aoi_projection, haydavies
+from pvlib.shading import projected_solar_zenith_angle, shaded_fraction1d
+from pvlib.tracking import calc_surface_orientation
 
 def _poa_ground_shadows(poa_ground, f_gnd_beam, df, vf_gnd_sky):
     """
@@ -94,13 +95,13 @@ def _poa_sky_diffuse_pv(dhi, gcr, surface_tilt, x0=0, x1=1):
     return np.array(dhi) * vf_integ
 
 
-def _poa_ground_pv(poa_ground, gcr, surface_tilt, height, pitch,
+def _poa_ground_pv(poa_ground, gcr, tracker_rotation, height, pitch,
                    x0=0, x1=1, g0=0, g1=1, max_rows=10):
     """
     Reduce ground-reflected irradiance to account for limited view of the
     ground from the row surface.
 
-    Parameters
+    Parameters  TODO fix
     ----------
     poa_ground : numeric
         Ground-reflected irradiance that would reach the row surface if the
@@ -121,15 +122,15 @@ def _poa_ground_pv(poa_ground, gcr, surface_tilt, height, pitch,
     numeric
         Ground diffuse irradiance on the row plane. [W/m^2]
     """
-    vf_integ = utils.vf_row_ground_2d_integ(surface_tilt=surface_tilt, gcr=gcr,
-                                            height=height, pitch=pitch,
+    vf_integ = utils.vf_row_ground_2d_integ(surface_tilt=tracker_rotation,
+                                            gcr=gcr, height=height,
+                                            pitch=pitch,
                                             x0=x0, x1=x1, g0=g0, g1=g1,
                                             max_rows=max_rows)
     return poa_ground * vf_integ
 
 
-def _shaded_fraction(solar_zenith, solar_azimuth, surface_tilt,
-                     surface_azimuth, gcr, x0=0, x1=1):
+def _shaded_fraction(tracker_rotation, phi, gcr, x0=0, x1=1):
     """
     Calculate fraction (from the bottom) of row slant height that is shaded
     from direct irradiance by the row in front toward the sun.
@@ -176,35 +177,33 @@ def _shaded_fraction(solar_zenith, solar_azimuth, surface_tilt,
        Single-Axis Trackers", Technical Report NREL/TP-5K00-76626, July 2020.
        https://www.nrel.gov/docs/fy20osti/76626.pdf
     """
-    tan_phi = utils._solar_projection_tangent(
-        solar_zenith, solar_azimuth, surface_azimuth)
-    # length of shadow behind a row as a fraction of pitch
-    x = gcr * (sind(surface_tilt) * tan_phi + cosd(surface_tilt))
-    f_x = 1 - 1. / x
-    # set f_x to be 1 when sun is behind the array
-    ao = aoi(surface_tilt, surface_azimuth, solar_zenith, solar_azimuth)
-    f_x = np.where(ao < 90, f_x, 1.)
-    # when x < 1, the shadow is not long enough to fall on the row surface
-    f_x = np.where(x > 1., f_x, 0.)
+
+    # note: ground slope is already accounted for in phi and gcr, so don't
+    # apply it here.
+    # also, we have PSZA instead of solar position, so use fake azimuths to
+    # trick shaded_fraction1d into accepting it as-is
+    f_s = shaded_fraction1d(phi, solar_azimuth=90, axis_azimuth=0,
+                            shaded_row_rotation=tracker_rotation,
+                            collector_width=gcr, pitch=1, )
     
     # dimensions: row segment, time
-    f_x = np.atleast_1d(f_x)[np.newaxis, :]
+    f_s = np.atleast_1d(f_s)[np.newaxis, :]
     x0 = np.atleast_1d(x0)[:, np.newaxis]
     x1 = np.atleast_1d(x1)[:, np.newaxis]
     
-    swap = surface_tilt < 0
+    swap = tracker_rotation < 0
     x0, x1 = np.where(swap, 1 - x1, x0), np.where(swap, 1 - x0, x1)
-    
-    f_s = np.clip((f_x - x0) / (x1 - x0), a_min=0, a_max=1)
+
+    f_s = np.clip((f_s - x0) / (x1 - x0), a_min=0, a_max=1)
     
     return f_s
 
 
-def get_irradiance_poa(surface_tilt, surface_azimuth, solar_zenith,
+def get_irradiance_poa(tracker_rotation, axis_azimuth, solar_zenith,
                        solar_azimuth, gcr, height, pitch, ghi, dhi, dni,
                        albedo, model='isotropic', dni_extra=None, iam=1.0,
-                       n_row_segments=1, n_ground_segments=1,
-                       npoints=None, vectorize=None):
+                       n_row_segments=1, n_ground_segments=1, axis_tilt=0,
+                       cross_axis_slope=0, npoints=None, vectorize=None):
     r"""
     Calculate plane-of-array (POA) irradiance on one side of a row of modules.
 
@@ -219,7 +218,7 @@ def get_irradiance_poa(surface_tilt, surface_azimuth, solar_zenith,
     but are not adjusted for solar spectrum or reduced by a module's
     bifaciality factor.
 
-    Parameters
+    Parameters  TODO fix these
     ----------
     surface_tilt : numeric
         Tilt of the surface from horizontal. Must be between 0 and 180. For
@@ -340,6 +339,24 @@ def get_irradiance_poa(surface_tilt, surface_azimuth, solar_zenith,
         dhi = dhi - circumsolar_horizontal
         dni = dni + circumsolar_normal
 
+    if axis_tilt != 0 or cross_axis_slope != 0:
+        height = height * cosd(cross_axis_slope)  # TODO this needs to be ground slope, not cross-axis slope.  how to calculate that from axis tilt and cross-axis slope?
+        pitch = pitch / cosd(cross_axis_slope)
+        gcr = gcr / cosd(cross_axis_slope)
+        true_tracker_rotation = tracker_rotation
+        tracker_rotation = tracker_rotation - cross_axis_slope
+        ghi = dhi + dni * np.clip(aoi_projection(axis_tilt, axis_azimuth,
+                                                 solar_zenith, solar_azimuth),
+                                  a_min=0)
+    #dhi = dhi
+    #dni = dni
+    
+    # TODO rotate solar vector
+    # TODO figure out how to adjust irradiance components
+    #  + dhi: maybe no need to adjust, since the blocked view is only near the
+    #         the horizon, and that part of the sky is blocked by rows anyway?
+    #  + dni: no adjustment needed; the measurement plane is not affected
+    #  + ghi: recalculate based on DHI, DNI, and cos(aoi(sun, ground_plane))?
 
     x_row = np.linspace(0, 1, n_row_segments+1)
     x0 = x_row[:-1]
@@ -359,10 +376,15 @@ def get_irradiance_poa(surface_tilt, surface_azimuth, solar_zenith,
     # ensures that view factors to the sky are computed to within 5 degrees
     # of the horizon
     max_rows = np.ceil(height / (pitch * tand(5)))
+    
+    phi = projected_solar_zenith_angle(solar_zenith, solar_azimuth,
+                                       axis_tilt, axis_azimuth)
+    phi = phi - cross_axis_slope
+    
     # fraction of ground between rows that is illuminated accounting for
     # shade from panels. [1], Eq. 4
     f_gnd_beam = utils._unshaded_ground_fraction(
-        surface_tilt, surface_azimuth, solar_zenith, solar_azimuth, gcr,
+        tracker_rotation, phi, gcr,
         pitch=pitch, height=height, g0=g0, g1=g1, max_rows=max_rows)
     f_gnd_beam = f_gnd_beam[:, np.newaxis, :]
     # integrated view factor from the ground to the sky, integrated between
@@ -370,16 +392,15 @@ def get_irradiance_poa(surface_tilt, surface_azimuth, solar_zenith,
     # method differs from [1], Eq. 7 and Eq. 8; height is defined at row
     # center rather than at row lower edge as in [1].
     vf_gnd_sky = utils.vf_ground_sky_2d_integ(
-        surface_tilt, gcr, height, pitch, g0=g0, g1=g1, max_rows=max_rows,
+        tracker_rotation, gcr, height, pitch, g0=g0, g1=g1, max_rows=max_rows,
         npoints=npoints, vectorize=vectorize)
     vf_gnd_sky = vf_gnd_sky[:, np.newaxis, :]
     # fraction of row slant height that is shaded from direct irradiance
-    f_x = _shaded_fraction(solar_zenith, solar_azimuth, surface_tilt,
-                           surface_azimuth, gcr, x0, x1)
+    f_x = _shaded_fraction(tracker_rotation, phi, gcr, x0, x1)
     f_x = f_x[np.newaxis, :, :]
 
     # Total sky diffuse received by both shaded and unshaded portions
-    poa_sky_pv = _poa_sky_diffuse_pv(dhi, gcr, surface_tilt, x0, x1)
+    poa_sky_pv = _poa_sky_diffuse_pv(dhi, gcr, tracker_rotation, x0, x1)
     poa_sky_pv = poa_sky_pv[0]  # drop unnecesary first dimension
 
     # irradiance reflected from the ground before accounting for shadows
@@ -405,7 +426,7 @@ def get_irradiance_poa(surface_tilt, surface_azimuth, solar_zenith,
     # the usual ground-reflected irradiance includes the single row to ground
     # view factor (1 - cos(tilt))/2, and Eq. 10, 11 and later multiply
     # this quantity by a ratio of view factors.
-    poa_gnd_pv = _poa_ground_pv(ground_diffuse, gcr, surface_tilt,
+    poa_gnd_pv = _poa_ground_pv(ground_diffuse, gcr, tracker_rotation,
                                 height=height, pitch=pitch, x0=x0, x1=x1,
                                 g0=g0, g1=g1, max_rows=max_rows)
     poa_gnd_pv = np.sum(poa_gnd_pv, axis=0)  # sum over ground segments
@@ -414,8 +435,11 @@ def get_irradiance_poa(surface_tilt, surface_azimuth, solar_zenith,
     # component
     poa_diffuse = poa_gnd_pv + poa_sky_pv
     # beam on plane, make an array for consistency with poa_diffuse
-    poa_beam = np.atleast_1d(beam_component(
-        surface_tilt, surface_azimuth, solar_zenith, solar_azimuth, dni))
+    orientation = calc_surface_orientation(
+        true_tracker_rotation, axis_tilt=axis_tilt, axis_azimuth=axis_azimuth)
+    poa_beam = np.atleast_1d(dni * aoi_projection(**orientation,
+                                                  solar_zenith=solar_zenith,
+                                                  solar_azimuth=solar_azimuth))
     poa_direct = poa_beam * (1 - f_x) * iam  # direct only on the unshaded part
     poa_direct = poa_direct[0]  # drop unnecessary first dimension
     poa_global = poa_direct + poa_diffuse
