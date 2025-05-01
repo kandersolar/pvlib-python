@@ -5,8 +5,7 @@ Functions for the infinite sheds bifacial irradiance model.
 import numpy as np
 import pandas as pd
 from pvlib.tools import cosd, sind, tand
-#from pvlib.bifacial import utils
-import utils
+from pvlib.bifacial import utils
 from pvlib.irradiance import aoi_projection, haydavies
 from pvlib.shading import projected_solar_zenith_angle, shaded_fraction1d
 from pvlib.tracking import calc_surface_orientation
@@ -340,7 +339,7 @@ def get_irradiance_poa(tracker_rotation, axis_azimuth, solar_zenith,
         dni = dni + circumsolar_normal
 
     if axis_tilt != 0 or cross_axis_slope != 0:
-        height = height * cosd(cross_axis_slope)  # TODO this needs to be ground slope, not cross-axis slope.  how to calculate that from axis tilt and cross-axis slope?
+        height = height * cosd(cross_axis_slope) * cosd(axis_tilt)  # TODO check that this is correct
         pitch = pitch / cosd(cross_axis_slope)
         gcr = gcr / cosd(cross_axis_slope)
         true_tracker_rotation = tracker_rotation
@@ -348,15 +347,11 @@ def get_irradiance_poa(tracker_rotation, axis_azimuth, solar_zenith,
         ghi = dhi + dni * np.clip(aoi_projection(axis_tilt, axis_azimuth,
                                                  solar_zenith, solar_azimuth),
                                   a_min=0)
-    #dhi = dhi
-    #dni = dni
-    
-    # TODO rotate solar vector
-    # TODO figure out how to adjust irradiance components
-    #  + dhi: maybe no need to adjust, since the blocked view is only near the
-    #         the horizon, and that part of the sky is blocked by rows anyway?
-    #  + dni: no adjustment needed; the measurement plane is not affected
-    #  + ghi: recalculate based on DHI, DNI, and cos(aoi(sun, ground_plane))?
+        #  + dhi: maybe no need to adjust, since the blocked view is only near the
+        #         the horizon, and that part of the sky is blocked by rows anyway?
+        #  + dni: no adjustment needed; the measurement plane is not affected
+        #dhi = dhi
+        #dni = dni
 
     x_row = np.linspace(0, 1, n_row_segments+1)
     x0 = x_row[:-1]
