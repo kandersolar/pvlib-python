@@ -138,6 +138,7 @@ def _unshaded_ground_fraction(tracker_rotation, phi, gcr, pitch, height,
     f_gnd_beam = 1 - np.clip(np.sum(fs, axis=0), 0, 1)  # sum along k dimension
     
     # using phi is more convenient, and I think better, than using zenith
+    phi = phi[0, :, :]  # drop k dimension for the next line
     f_gnd_beam = np.where(phi > 87, 0., f_gnd_beam)
 
     return f_gnd_beam

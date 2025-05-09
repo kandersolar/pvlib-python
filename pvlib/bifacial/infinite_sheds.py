@@ -338,11 +338,11 @@ def get_irradiance_poa(tracker_rotation, axis_azimuth, solar_zenith,
         dhi = dhi - circumsolar_horizontal
         dni = dni + circumsolar_normal
 
+    true_tracker_rotation = tracker_rotation
     if axis_tilt != 0 or cross_axis_slope != 0:
         height = height * cosd(cross_axis_slope) * cosd(axis_tilt)  # TODO check that this is correct
         pitch = pitch / cosd(cross_axis_slope)
         gcr = gcr / cosd(cross_axis_slope)
-        true_tracker_rotation = tracker_rotation
         tracker_rotation = tracker_rotation - cross_axis_slope
         ghi = dhi + dni * np.clip(aoi_projection(axis_tilt, axis_azimuth,
                                                  solar_zenith, solar_azimuth),
@@ -448,7 +448,7 @@ def get_irradiance_poa(tracker_rotation, axis_azimuth, solar_zenith,
     return output
 
 
-def get_irradiance(surface_tilt, surface_azimuth, solar_zenith, solar_azimuth,
+def get_irradiance(tracker_rotation, axis_azimuth, solar_zenith, solar_azimuth,
                    gcr, height, pitch, ghi, dhi, dni,
                    albedo, model='isotropic', dni_extra=None, iam_front=1.0,
                    iam_back=1.0, bifaciality=0.8, shade_factor=-0.02,
@@ -478,7 +478,7 @@ def get_irradiance(surface_tilt, surface_azimuth, solar_zenith, solar_azimuth,
     through the module to the ground through gaps between cells.
 
     Parameters
-    ----------
+    ----------  TODO fix
     surface_tilt : numeric
         Tilt from horizontal of the front-side surface. [degree]
 
@@ -610,10 +610,10 @@ def get_irradiance(surface_tilt, surface_azimuth, solar_zenith, solar_azimuth,
     get_irradiance_poa
     """
     # backside is rotated and flipped relative to front
-    backside_tilt, backside_sysaz = _backside(surface_tilt, surface_azimuth)
+    tracker_rotation_back = tracker_rotation + 180
     # front side POA irradiance
     irrad_front = get_irradiance_poa(
-        surface_tilt=surface_tilt, surface_azimuth=surface_azimuth,
+        tracker_rotation=tracker_rotation, axis_azimuth=axis_azimuth,
         solar_zenith=solar_zenith, solar_azimuth=solar_azimuth,
         gcr=gcr, height=height, pitch=pitch, ghi=ghi, dhi=dhi, dni=dni,
         albedo=albedo, model=model, dni_extra=dni_extra, iam=iam_front,
@@ -621,7 +621,7 @@ def get_irradiance(surface_tilt, surface_azimuth, solar_zenith, solar_azimuth,
         npoints=npoints, vectorize=vectorize)
     # back side POA irradiance
     irrad_back = get_irradiance_poa(
-        surface_tilt=backside_tilt, surface_azimuth=backside_sysaz,
+        tracker_rotation=tracker_rotation_back, axis_azimuth=axis_azimuth,
         solar_zenith=solar_zenith, solar_azimuth=solar_azimuth,
         gcr=gcr, height=height, pitch=pitch, ghi=ghi, dhi=dhi, dni=dni,
         albedo=albedo, model=model, dni_extra=dni_extra, iam=iam_back,
@@ -661,10 +661,3 @@ def get_irradiance(surface_tilt, surface_azimuth, solar_zenith, solar_azimuth,
     output['poa_global'] = output['poa_front'] + \
         output['poa_back'] * bifaciality * effects
     return output
-
-
-def _backside(tilt, surface_azimuth):
-    backside_tilt = 180. - tilt
-    backside_tilt = np.where(backside_tilt > 180, backside_tilt - 360, backside_tilt)
-    backside_sysaz = (180. + surface_azimuth) % 360.
-    return backside_tilt, backside_sysaz
