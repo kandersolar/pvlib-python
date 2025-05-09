@@ -402,7 +402,7 @@ def get_irradiance_poa(tracker_rotation, axis_azimuth, solar_zenith,
     # and restricted views
     # this is a deviation from [1], because the row to ground view factor
     # is accounted for in a different manner
-    ground_diffuse = ghi * albedo  # TODO fix to match ground segments
+    ground_diffuse = ghi * albedo
 
     # diffuse fraction
     diffuse_fraction = np.clip(dhi / ghi, 0., 1.)
@@ -432,9 +432,11 @@ def get_irradiance_poa(tracker_rotation, axis_azimuth, solar_zenith,
     # beam on plane, make an array for consistency with poa_diffuse
     orientation = calc_surface_orientation(
         true_tracker_rotation, axis_tilt=axis_tilt, axis_azimuth=axis_azimuth)
-    poa_beam = np.atleast_1d(dni * aoi_projection(**orientation,
-                                                  solar_zenith=solar_zenith,
-                                                  solar_azimuth=solar_azimuth))
+    projection = np.clip(aoi_projection(**orientation,
+                                        solar_zenith=solar_zenith,
+                                        solar_azimuth=solar_azimuth),
+                         a_min=0, a_max=None)
+    poa_beam = np.atleast_1d(dni * projection)
     poa_direct = poa_beam * (1 - f_x) * iam  # direct only on the unshaded part
     poa_direct = poa_direct[0]  # drop unnecessary first dimension
     poa_global = poa_direct + poa_diffuse
