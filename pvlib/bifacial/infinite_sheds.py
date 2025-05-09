@@ -611,8 +611,6 @@ def get_irradiance(tracker_rotation, axis_azimuth, solar_zenith, solar_azimuth,
     --------
     get_irradiance_poa
     """
-    # backside is rotated and flipped relative to front
-    tracker_rotation_back = tracker_rotation + 180
     # front side POA irradiance
     irrad_front = get_irradiance_poa(
         tracker_rotation=tracker_rotation, axis_azimuth=axis_azimuth,
@@ -622,6 +620,9 @@ def get_irradiance(tracker_rotation, axis_azimuth, solar_zenith, solar_azimuth,
         n_row_segments=n_row_segments, n_ground_segments=n_ground_segments,
         npoints=npoints, vectorize=vectorize)
     # back side POA irradiance
+    # backside is rotated and flipped relative to front  # TODO can this math be simplified?
+    tracker_rotation_back = tracker_rotation + 180
+    tracker_rotation_back = ((tracker_rotation_back + 180) % 360) - 180
     irrad_back = get_irradiance_poa(
         tracker_rotation=tracker_rotation_back, axis_azimuth=axis_azimuth,
         solar_zenith=solar_zenith, solar_azimuth=solar_azimuth,
@@ -629,6 +630,8 @@ def get_irradiance(tracker_rotation, axis_azimuth, solar_zenith, solar_azimuth,
         albedo=albedo, model=model, dni_extra=dni_extra, iam=iam_back,
         n_row_segments=n_row_segments, n_ground_segments=n_ground_segments,
         npoints=npoints, vectorize=vectorize)
+    for key, value in irrad_back.items():
+        irrad_back[key] = value[::-1, :]  # invert x0/x1 dimension
 
     colmap_front = {
         'poa_global': 'poa_front',
