@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 from pvlib.tools import cosd, sind, tand
 from pvlib.bifacial import utils
-from pvlib.irradiance import aoi_projection, haydavies
+from pvlib.irradiance import aoi_projection, haydavies, perez
 from pvlib.shading import projected_solar_zenith_angle, shaded_fraction1d
 from pvlib.tracking import calc_surface_orientation
 
@@ -202,7 +202,8 @@ def _shaded_fraction(tracker_rotation, phi, gcr, x0=0, x1=1):
 
 def get_irradiance_poa(tracker_rotation, axis_azimuth, solar_zenith,
                        solar_azimuth, gcr, height, pitch, ghi, dhi, dni,
-                       albedo, model='isotropic', dni_extra=None, iam=1.0,
+                       albedo, model='isotropic', dni_extra=None,
+                       airmass=None, iam=1.0,
                        n_row_segments=1, n_ground_segments=1, axis_tilt=0,
                        cross_axis_slope=0, npoints=None, vectorize=None):
     r"""
@@ -320,26 +321,44 @@ def get_irradiance_poa(tracker_rotation, axis_azimuth, solar_zenith,
     --------
     get_irradiance
     """
-    if model == 'haydavies':
-        if dni_extra is None:
-            raise ValueError(f'must supply dni_extra for {model} model')
-        # Call haydavies first time within the horizontal plane - to subtract
+    if model in ['haydavies', 'perez']:
+        # determine circumsolar irradiance, add it to DNI
+
+        if model == 'haydavies':
+            if dni_extra is None:
+                raise ValueError(f'must supply dni_extra for {model} model')
+            diffuse_model_func = haydavies
+            extra_kwargs = {}
+
+        elif model == 'perez':
+            # note: horizon brightening is ignored
+            if dni_extra is None or airmass is None:
+                raise ValueError(
+                    f'must supply dni_extra and airmass for {model} model')
+            diffuse_model_func = perez
+            extra_kwargs = {'airmass': airmass}
+
+        kwargs = dict(
+            dhi=dhi, dni=dni, dni_extra=dni_extra,
+            solar_zenith=solar_zenith, solar_azimuth=solar_azimuth,
+            return_components=True
+        )
+        # Call the model first time within the horizontal plane - to subtract
         # circumsolar_horizontal from DHI
-        sky_diffuse_comps_horizontal = haydavies(0, 180, dhi, dni, dni_extra,
-                                                 solar_zenith, solar_azimuth,
-                                                 return_components=True)
+        sky_diffuse_comps_horizontal = diffuse_model_func(
+            surface_tilt=0, surface_azimuth=180, **kwargs, **extra_kwargs)
         circumsolar_horizontal = sky_diffuse_comps_horizontal['circumsolar']
 
-        # Call haydavies a second time where circumsolar_normal is facing
+        # Call the model a second time where circumsolar_normal is facing
         # directly towards sun, and can be added to DNI
-        sky_diffuse_comps_normal = haydavies(solar_zenith, solar_azimuth, dhi,
-                                             dni, dni_extra, solar_zenith,
-                                             solar_azimuth,
-                                             return_components=True)
+        sky_diffuse_comps_normal = diffuse_model_func(
+            surface_tilt=solar_zenith, surface_azimuth=solar_azimuth,
+            **kwargs, **extra_kwargs)
         circumsolar_normal = sky_diffuse_comps_normal['circumsolar']
 
         dhi = dhi - circumsolar_horizontal
         dni = dni + circumsolar_normal
+
 
     true_tracker_rotation = tracker_rotation
     if axis_tilt != 0 or cross_axis_slope != 0:
@@ -373,7 +392,7 @@ def get_irradiance_poa(tracker_rotation, axis_azimuth, solar_zenith,
     # rows to consider in front and behind current row
     # ensures that view factors to the sky are computed to within 5 degrees
     # of the horizon
-    max_rows = np.ceil(height / (pitch * tand(5)))
+    max_rows = 5*np.ceil(height / (pitch * tand(5)))
     
     phi = projected_solar_zenith_angle(solar_zenith, solar_azimuth,
                                        axis_tilt, axis_azimuth)
@@ -405,6 +424,7 @@ def get_irradiance_poa(tracker_rotation, axis_azimuth, solar_zenith,
     # and restricted views
     # this is a deviation from [1], because the row to ground view factor
     # is accounted for in a different manner
+
     # Reduce ground-reflected irradiance because other rows in the array
     # block irradiance from reaching the ground.
     # [2], Eq. 9
@@ -646,7 +666,7 @@ def get_irradiance(tracker_rotation, axis_azimuth, solar_zenith, solar_azimuth,
         'shaded_fraction': 'shaded_fraction_back',
     }
 
-    if isinstance(ghi, pd.Series):
+    if False and isinstance(ghi, pd.Series):
         irrad_front = irrad_front.rename(columns=colmap_front)
         irrad_back = irrad_back.rename(columns=colmap_back)
         output = pd.concat([irrad_front, irrad_back], axis=1)
