@@ -392,7 +392,7 @@ def get_irradiance_poa(tracker_rotation, axis_azimuth, solar_zenith,
     # rows to consider in front and behind current row
     # ensures that view factors to the sky are computed to within 5 degrees
     # of the horizon
-    max_rows = 5*np.ceil(height / (pitch * tand(5)))
+    max_rows = np.ceil(height / (pitch * tand(5)))
     
     phi = projected_solar_zenith_angle(solar_zenith, solar_azimuth,
                                        axis_tilt, axis_azimuth)
