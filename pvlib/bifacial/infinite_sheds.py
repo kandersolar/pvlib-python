@@ -366,9 +366,10 @@ def get_irradiance_poa(tracker_rotation, axis_azimuth, solar_zenith,
         pitch = pitch / cosd(cross_axis_slope)
         gcr = gcr / cosd(cross_axis_slope)
         tracker_rotation = tracker_rotation - cross_axis_slope
-        ghi = dhi + dni * np.clip(aoi_projection(axis_tilt, axis_azimuth,
-                                                 solar_zenith, solar_azimuth),
-                                  a_min=0)
+        ghi = dhi + dni * np.maximum(
+            aoi_projection(axis_tilt, axis_azimuth,
+                           solar_zenith, solar_azimuth),
+            0)
         #  + dhi: maybe no need to adjust, since the blocked view is only near the
         #         the horizon, and that part of the sky is blocked by rows anyway?
         #  + dni: no adjustment needed; the measurement plane is not affected
