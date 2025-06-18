@@ -472,7 +472,8 @@ def get_irradiance(tracker_rotation, axis_azimuth, solar_zenith, solar_azimuth,
                    airmass=None, iam_front=1.0,
                    iam_back=1.0, bifaciality=0.8, shade_factor=-0.02,
                    transmission_factor=0,
-                   n_row_segments=1, n_ground_segments=1,
+                   n_row_segments=1, n_ground_segments=1, axis_tilt=0,
+                   cross_axis_slope=0,
                    npoints=None, vectorize=None):
     """
     Get front and rear irradiance using the infinite sheds model.
@@ -629,26 +630,30 @@ def get_irradiance(tracker_rotation, axis_azimuth, solar_zenith, solar_azimuth,
     get_irradiance_poa
     """
     # front side POA irradiance
-    irrad_front = get_irradiance_poa(
-        tracker_rotation=tracker_rotation, axis_azimuth=axis_azimuth,
+    shared_parameters = dict(
+        axis_azimuth=axis_azimuth,
         solar_zenith=solar_zenith, solar_azimuth=solar_azimuth,
-        gcr=gcr, height=height, pitch=pitch, ghi=ghi, dhi=dhi, dni=dni,
-        albedo=albedo, model=model, dni_extra=dni_extra,
-        airmass=airmass, iam=iam_front,
-        n_row_segments=n_row_segments, n_ground_segments=n_ground_segments,
-        npoints=npoints, vectorize=vectorize)
+        gcr=gcr, height=height, pitch=pitch,
+        ghi=ghi, dhi=dhi, dni=dni,
+        albedo=albedo,
+        model=model,
+        dni_extra=dni_extra,
+        airmass=airmass,
+        n_row_segments=n_row_segments,
+        n_ground_segments=n_ground_segments,
+        axis_tilt=axis_tilt,
+        cross_axis_slope=cross_axis_slope,
+        npoints=npoints,
+        vectorize=vectorize,
+    )
+    irrad_front = get_irradiance_poa(
+        tracker_rotation=tracker_rotation, iam=iam_front, **shared_parameters)
     # back side POA irradiance
     # backside is rotated and flipped relative to front  # TODO can this math be simplified?
     tracker_rotation_back = tracker_rotation + 180
     tracker_rotation_back = ((tracker_rotation_back + 180) % 360) - 180
     irrad_back = get_irradiance_poa(
-        tracker_rotation=tracker_rotation_back, axis_azimuth=axis_azimuth,
-        solar_zenith=solar_zenith, solar_azimuth=solar_azimuth,
-        gcr=gcr, height=height, pitch=pitch, ghi=ghi, dhi=dhi, dni=dni,
-        albedo=albedo, model=model, dni_extra=dni_extra,
-        airmass=airmass, iam=iam_back,
-        n_row_segments=n_row_segments, n_ground_segments=n_ground_segments,
-        npoints=npoints, vectorize=vectorize)
+        tracker_rotation=tracker_rotation_back, iam=iam_back, **shared_parameters)
     for key, value in irrad_back.items():
         irrad_back[key] = value[::-1, :]  # invert x0/x1 dimension
 
