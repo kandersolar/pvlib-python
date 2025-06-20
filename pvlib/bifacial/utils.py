@@ -39,7 +39,7 @@ def _solar_projection_tangent(solar_zenith, solar_azimuth, surface_azimuth):
 
 
 def _unshaded_ground_fraction(tracker_rotation, phi, gcr, pitch, height,
-                              g0=0, g1=1, max_rows=10, max_zenith=87):
+                              g0=0, g1=1, max_rows=10, max_zenith=85):
     r"""
     Calculate the fraction of the ground with incident direct irradiance.
 
@@ -74,7 +74,7 @@ def _unshaded_ground_fraction(tracker_rotation, phi, gcr, pitch, height,
         Distance between two rows; must be in the same units as ``height``.
     g0, g1 : TODO
     max_rows : TODO
-    max_zenith : numeric, default 87
+    max_zenith : numeric, default 85
         Maximum zenith angle. For solar_zenith > max_zenith, unshaded ground
         fraction is set to 0. [degree]
 
@@ -124,14 +124,14 @@ def _unshaded_ground_fraction(tracker_rotation, phi, gcr, pitch, height,
 
     # individual contributions from all k rows
     # TODO bug with zenith=0, fix these < > <= >=
-    fs = np.zeros_like(cp)
-    fs = np.where((dp < a) & (cp > b), 1.0, fs)
+    fs = np.full_like(cp, 1.0)
+    # fs = np.where((dp < a) & (cp > b), 1.0, fs)  # initial value already 1.0
     fs = np.where((dp < a) & (a < cp) & (cp < b), (cp - a) / (b - a), fs)
-    #fs = np.where((dp < a) & (cp < a), 0.0, fs)  # initial value already 0
+    fs = np.where((dp < a) & (cp < a), 0.0, fs)
     fs = np.where((a < dp) & (dp < b) & (cp > b), (b - dp) / (b - a), fs)
     fs = np.where((a < dp) & (dp < b) & (a < cp) & (cp < b),
                   (cp - dp) / (b - a), fs)
-    # fs = np.where((dp > b) & (cp > b), 0.0, fs)  # initial value already 0
+    fs = np.where((dp > b) & (cp > b), 0.0, fs)
     
     # total shaded fraction is sum of individuals; note that shadows
     # never overlap in this model, except when shaded fraction is 100% anyway
@@ -139,7 +139,7 @@ def _unshaded_ground_fraction(tracker_rotation, phi, gcr, pitch, height,
     
     # using phi is more convenient, and I think better, than using zenith
     phi = phi[0, :, :]  # drop k dimension for the next line
-    f_gnd_beam = np.where(phi > 87, 0., f_gnd_beam)
+    f_gnd_beam = np.where(np.abs(phi) > max_zenith, 0., f_gnd_beam)
 
     return f_gnd_beam
 

@@ -131,7 +131,7 @@ def _poa_ground_pv(poa_ground, gcr, tracker_rotation, height, pitch,
     return poa_ground * vf_integ
 
 
-def _shaded_fraction(tracker_rotation, phi, gcr, x0=0, x1=1):
+def _shaded_fraction(tracker_rotation, phi, gcr, axis_azimuth, x0=0, x1=1):
     """
     Calculate fraction (from the bottom) of row slant height that is shaded
     from direct irradiance by the row in front toward the sun.
@@ -146,7 +146,7 @@ def _shaded_fraction(tracker_rotation, phi, gcr, x0=0, x1=1):
         1 \\right) \\right)
 
     Parameters
-    ----------
+    ---------- TODO fix
     solar_zenith : numeric
         Apparent (refraction-corrected) solar zenith. [degrees]
     solar_azimuth : numeric
@@ -182,10 +182,13 @@ def _shaded_fraction(tracker_rotation, phi, gcr, x0=0, x1=1):
     # note: ground slope is already accounted for in phi and gcr, so don't
     # apply it here.
     # also, we have PSZA instead of solar position, so use fake azimuths to
-    # trick shaded_fraction1d into accepting it as-is
-    f_s = shaded_fraction1d(phi, solar_azimuth=90, axis_azimuth=0,
+    # trick shaded_fraction1d into accepting it as-is.
+    # direction of positive phi by right-hand rule: 
+    solar_azimuth = axis_azimuth + 90
+    f_s = shaded_fraction1d(phi, solar_azimuth=solar_azimuth,
+                            axis_azimuth=axis_azimuth,
                             shaded_row_rotation=tracker_rotation,
-                            collector_width=gcr, pitch=1, )
+                            collector_width=1, pitch=1/gcr)
     
     # dimensions: row segment, time
     f_s = np.atleast_1d(f_s)[np.newaxis, :]
@@ -364,8 +367,9 @@ def get_irradiance_poa(tracker_rotation, axis_azimuth, solar_zenith,
     if axis_tilt != 0 or cross_axis_slope != 0:
         height = height * cosd(cross_axis_slope) * cosd(axis_tilt)  # TODO check that this is correct
         pitch = pitch / cosd(cross_axis_slope)
-        gcr = gcr / cosd(cross_axis_slope)
+        gcr = gcr * cosd(cross_axis_slope)
         tracker_rotation = tracker_rotation - cross_axis_slope
+        tracker_rotation = ((tracker_rotation + 180) % 360) - 180  # put back to [-180, 180]
         ghi = dhi + dni * np.maximum(
             aoi_projection(axis_tilt, axis_azimuth,
                            solar_zenith, solar_azimuth),
@@ -391,9 +395,9 @@ def get_irradiance_poa(tracker_rotation, axis_azimuth, solar_zenith,
 
     # Calculate some geometric quantities
     # rows to consider in front and behind current row
-    # ensures that view factors to the sky are computed to within 5 degrees
+    # ensures that view factors to the sky are computed to within 4 degrees
     # of the horizon
-    max_rows = np.ceil(height / (pitch * tand(5)))
+    max_rows = np.ceil(height / (pitch * tand(4)))
     
     phi = projected_solar_zenith_angle(solar_zenith, solar_azimuth,
                                        axis_tilt, axis_azimuth)
@@ -414,7 +418,7 @@ def get_irradiance_poa(tracker_rotation, axis_azimuth, solar_zenith,
         npoints=npoints, vectorize=vectorize)
     vf_gnd_sky = vf_gnd_sky[:, np.newaxis, :]
     # fraction of row slant height that is shaded from direct irradiance
-    f_x = _shaded_fraction(tracker_rotation, phi, gcr, x0, x1)
+    f_x = _shaded_fraction(tracker_rotation, phi, gcr, axis_azimuth, x0, x1)
     f_x = f_x[np.newaxis, :, :]
 
     # Total sky diffuse received by both shaded and unshaded portions
