@@ -303,7 +303,7 @@ def vf_ground_sky_2d_integ(tracker_rotation, gcr, height, pitch, g0=0, g1=1,
     # see GH #1867
     k = np.arange(-max_rows, max_rows)[:, np.newaxis, np.newaxis]
 
-    collector_width = pitch * gcr   
+    collector_width = pitch * gcr
     Lcostheta = collector_width * cosd(tracker_rotation)
     Lsintheta = collector_width * sind(tracker_rotation)
 
@@ -525,7 +525,7 @@ def vf_row_ground_2d_integ(surface_tilt, gcr, height, pitch,
         [unitless]
 
     '''
-        
+    
     # dimensions: k/max_rows, ground segment, row segment, time
 
     surface_tilt = np.atleast_1d(surface_tilt)[np.newaxis, np.newaxis, np.newaxis, :]

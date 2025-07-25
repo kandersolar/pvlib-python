@@ -335,3 +335,11 @@ def test_get_irradiance_with_haydavies():
             gcr, height, pitch, ghi, dhi, dni, albedo, model, None,
             iam_front, iam_back, bifaciality=0.8, shade_factor=-0.02,
             transmission_factor=0)
+
+
+# todo:
+# - (mean of values for n_row_segments>1) == (value for n_row_segments==1)
+# - shaded fraction on sloped terrain, east module is shaded longer than west
+# - exactly horizontal trackers, exactly vertical trackers
+# - sun behind modules
+# - row shadow boundaries fall exactly on ground segment boundaries
