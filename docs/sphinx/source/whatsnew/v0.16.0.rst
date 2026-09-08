@@ -75,6 +75,9 @@ Enhancements
 Documentation
 ~~~~~~~~~~~~~
 * Remove `g_poa_effective` from the :ref:`nomenclature` page (:pull:`2704`)
+* Clarify in the ``Notes`` section of :py:func:`pvlib.soiling.hsu` that the
+  default ``depo_veloc`` values correspond to the settling velocity of
+  particulates. (:issue:`2535`)
 * Correct the transposed table of Hellmann exponents in the
   :py:func:`pvlib.atmosphere.windspeed_powerlaw` docstring, which disagreed
   with :py:data:`pvlib.atmosphere.HELLMANN_SURFACE_EXPONENTS` in four of its
