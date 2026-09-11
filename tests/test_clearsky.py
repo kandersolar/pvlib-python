@@ -663,7 +663,7 @@ def test_detect_clearsky_arrays(detect_clearsky_data):
 def test_detect_clearsky_irregular_times(detect_clearsky_data):
     expected, cs = detect_clearsky_data
     times = cs.index.values.copy()
-    times[0] += 10**9
+    times[0] += pd.Timedelta(1, unit='s')
     times = pd.DatetimeIndex(times)
     with pytest.raises(NotImplementedError):
         clearsky.detect_clearsky(expected['GHI'].values, cs['ghi'].values,
