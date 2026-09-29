@@ -30,7 +30,7 @@ jobs:
         if: matrix.environment-type == 'conda'
         uses: mamba-org/setup-micromamba@v3
         with:
-          micromamba-version: '2.6.0-0'
+          micromamba-version: '2.9.0'
           environment-file: ${{ env.REQUIREMENTS }}
           cache-downloads: false
           cache-environment: false
