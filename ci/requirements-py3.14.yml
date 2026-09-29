@@ -1,6 +1,6 @@
 name: test_env
 channels:
-    - defaults
+    #- defaults
     - conda-forge
 dependencies:
     - coveralls
