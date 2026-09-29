@@ -28,7 +28,7 @@ jobs:
 
       - name: Install Conda environment with Micromamba
         if: matrix.environment-type == 'conda'
-        uses: mamba-org/setup-micromamba@v2
+        uses: mamba-org/setup-micromamba@v3
         with:
           #environment-file: ${{ env.REQUIREMENTS }}
           cache-downloads: false
