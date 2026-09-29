@@ -3,7 +3,7 @@ channels:
     - defaults
     - conda-forge
 dependencies:
-    - coveralls
+    #- coveralls
     - cython
     - ephem
     - h5py
@@ -11,13 +11,13 @@ dependencies:
     - numpy >= 1.21.2
     - pandas >= 1.3.3
     - pip
-    - pytest
-    - pytest-cov
-    - pytest-mock
-    - requests-mock
-    - pytest-timeout
-    - pytest-rerunfailures
-    - conda-forge::pytest-remotedata  # version in default channel is old
+    #- pytest
+    #- pytest-cov
+    #- pytest-mock
+    #- requests-mock
+    #- pytest-timeout
+    #- pytest-rerunfailures
+    #- conda-forge::pytest-remotedata  # version in default channel is old
     - python=3.14
     - pytz
     - requests
