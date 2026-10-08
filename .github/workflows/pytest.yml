@@ -35,8 +35,6 @@ jobs:
           cache-downloads: false
           cache-environment: false
           log-level: debug
-          create-args: >-
-            python=${{ matrix.python-version }}
           condarc: |
             channel-priority: flexible
         env:
