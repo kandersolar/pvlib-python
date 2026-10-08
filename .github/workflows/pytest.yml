@@ -34,9 +34,7 @@ jobs:
           environment-file: ${{ env.REQUIREMENTS }}
           cache-downloads: false
           cache-environment: false
-          create-args: >-
-            python=${{ matrix.python-version }}
-            v
+          create-args: -v
           condarc: |
             channel-priority: flexible
         env:
