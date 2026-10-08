@@ -34,7 +34,7 @@ jobs:
           environment-file: ${{ env.REQUIREMENTS }}
           cache-downloads: false
           cache-environment: false
-          create-args: -v
+          create-args: --log-level debug
           condarc: |
             channel-priority: flexible
         env:
