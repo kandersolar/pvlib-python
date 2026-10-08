@@ -9,7 +9,7 @@ jobs:
     strategy:
       fail-fast: false  # don't cancel other matrix jobs when one fails
       matrix:
-        os: [ windows-2022]
+        os: [windows-latest]
         python-version: ["3.14"]
         environment-type: [conda]
         suffix: ['']  # placeholder as an alternative to "-min"
@@ -36,6 +36,7 @@ jobs:
           cache-environment: false
           create-args: >-
             python=${{ matrix.python-version }}
+            v
           condarc: |
             channel-priority: flexible
         env:
