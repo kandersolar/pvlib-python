@@ -4,4 +4,4 @@ channels:
     #- conda-forge
 dependencies:
     - python=3.14
-    - tk=9.0.4
+    - tk=9.0.3
